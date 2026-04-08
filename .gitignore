@@ -1,6 +1,15 @@
 .Rhistory
 .Rproj.user/
+.codex_repo_mirror/
+.codex_upload_chunks/
+ogre_source_bundle.zip
+
 data/familles/
 data/propositions/
 data/workflow/
 data/referentiel/referentiel_familles_edep.csv
+data/referentiel/referentiel_rome_edep.csv
+data/referentiel/liens_familles_edep.csv
+
+!data/referentiel/ref_ogr.csv
+!data/referentiel/cr_gd_dp_v4_utf8.csv
