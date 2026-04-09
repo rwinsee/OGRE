@@ -37,35 +37,27 @@ ui <- fluidPage(
       .workspace-shell {
         max-width: 1480px;
         margin: 0 auto;
-        padding-top: 18px;
+        padding-top: 16px;
         padding-bottom: 26px;
       }
-      .workspace-intro {
-        background: linear-gradient(140deg, #16324a 0%, #27567b 52%, #2f7db6 100%);
-        border-radius: 24px;
-        color: #ffffff;
-        padding: 26px 28px;
+      .workspace-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
         margin-bottom: 18px;
-        box-shadow: 0 18px 32px rgba(15, 37, 58, 0.22);
-      }
-      .workspace-kicker {
-        text-transform: uppercase;
-        letter-spacing: 0.14em;
-        font-size: 12px;
-        opacity: 0.82;
-        margin-bottom: 8px;
       }
       .workspace-title {
-        font-size: 34px;
-        font-weight: 800;
-        line-height: 1.05;
-        margin-bottom: 10px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #17324d;
+        margin: 0;
       }
-      .workspace-copy {
-        font-size: 15px;
-        max-width: 920px;
-        line-height: 1.6;
-        opacity: 0.92;
+      @media (max-width: 768px) {
+        .workspace-topbar {
+          flex-direction: column;
+          align-items: flex-start;
+        }
       }
       .mode-tabs > .nav {
         display: grid;
@@ -110,17 +102,9 @@ ui <- fluidPage(
   div(
     class = "workspace-shell",
     div(
-      class = "workspace-intro",
-      div(class = "workspace-kicker", "OGRE"),
-      div(class = "workspace-title", "Outil de Gestion du ROME pour EDEP"),
-      div(
-        class = "workspace-copy",
-        "Edition, supervision et validation sont separees pour piloter le cycle de vie complet des propositions de familles."
-      ),
-      div(
-        style = "margin-top: 14px;",
-        actionButton("refresh_workflow", "Rafraichir les files", class = "btn-default")
-      )
+      class = "workspace-topbar",
+      h4(class = "workspace-title", "OGRE"),
+      actionButton("refresh_workflow", "Rafraichir les files", class = "btn-default")
     ),
     div(
       class = "mode-tabs",
