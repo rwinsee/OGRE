@@ -110,6 +110,16 @@ validation_server <- function(input, output, session) {
     df[idx, , drop = FALSE]
   })
   
+  validation_modification_compare <- reactive({
+    proposal <- selected_validation()
+    
+    if (is.null(proposal)) {
+      return(NULL)
+    }
+    
+    build_modification_compare(proposal, stock_families())
+  })
+  
   output$validation_kpi_panel <- renderUI({
     open_scope <- validation_open_scope()
     supervision_all <- supervision_states()
@@ -509,12 +519,34 @@ validation_server <- function(input, output, session) {
     tags$p(class = "validation-note", "Aucune action supplementaire n'est ouverte sur cet etat.")
   })
   
+  output$validation_modification_compare <- DT::renderDT({
+    compare <- validation_modification_compare()
+    
+    if (is.null(compare) || !isTRUE(compare$available)) {
+      return(NULL)
+    }
+    
+    make_modification_compare_datatable(compare$child_compare)
+  })
+  
+  output$validation_detail_modification_compare <- DT::renderDT({
+    compare <- validation_modification_compare()
+    
+    if (is.null(compare) || !isTRUE(compare$available)) {
+      return(NULL)
+    }
+    
+    make_modification_compare_datatable(compare$child_compare)
+  })
+  
   output$validation_publish_preview <- renderUI({
     proposal <- selected_validation()
     
     if (is.null(proposal)) {
       return(tags$p(class = "validation-impact", "Selectionne une proposition pour voir l'impact de publication sur le stock et le referentiel EDEP."))
     }
+    
+    compare <- validation_modification_compare()
     
     impact_text <- if (proposal$type_operation[1] == "modification" && nzchar(proposal$base_famille_id[1])) {
       paste("La publication remplacera la famille stock", proposal$base_famille_id[1], "par une nouvelle version alimentee depuis la validation.")
@@ -530,6 +562,29 @@ validation_server <- function(input, output, session) {
       tags$p(tags$strong("Impact referentiel EDEP : "), paste("parent", proposal$code_ogr_parent[1], "avec", proposal$nb_enfants[1], "liens enfant a publier")),
       if (nzchar(proposal$id_famille_stock_publiee[1])) {
         tags$p(tags$strong("Famille publiee : "), proposal$id_famille_stock_publiee[1])
+      },
+      if (!is.null(compare) && isTRUE(compare$is_modification)) {
+        tagList(
+          tags$hr(),
+          tags$h4("Comparatif avant / apres"),
+          if (!isTRUE(compare$available)) {
+            tags$p(class = "validation-note", compare$reason)
+          } else {
+            tagList(
+              tags$p(tags$strong("Parent avant : "), compare$parent_before),
+              tags$p(tags$strong("Parent apres : "), compare$parent_after),
+              tags$p(
+                tags$strong("Enfants avant / apres : "),
+                paste(compare$before_child_count, "->", compare$after_child_count)
+              ),
+              if (nrow(compare$child_compare) == 0) {
+                tags$p(class = "validation-note", "Aucun enfant a comparer entre l'avant et l'apres.")
+              } else {
+                DT::DTOutput("validation_modification_compare")
+              }
+            )
+          }
+        )
       }
     )
   })
@@ -540,6 +595,8 @@ validation_server <- function(input, output, session) {
     if (is.null(proposal)) {
       return(tags$p("Selectionne une proposition dans une file validation."))
     }
+    
+    compare <- validation_modification_compare()
     
     child_df <- child_df_from_vectors(
       split_pipe_values(proposal$codes_ogr_enfants[1]),
@@ -581,6 +638,30 @@ validation_server <- function(input, output, session) {
           tags$tbody(lapply(seq_len(nrow(child_df)), function(i) {
             tags$tr(tags$td(child_df$code_ogr[i]), tags$td(child_df$libelle[i]))
           }))
+        )
+      },
+      if (!is.null(compare) && isTRUE(compare$is_modification)) {
+        tagList(
+          tags$hr(),
+          tags$h4("Comparatif avant / apres"),
+          if (!isTRUE(compare$available)) {
+            tags$p(class = "validation-note", compare$reason)
+          } else {
+            tagList(
+              tags$div(
+                class = "validation-detail-grid",
+                box("Parent avant", compare$parent_before),
+                box("Parent apres", compare$parent_after),
+                box("Enfants avant", as.character(compare$before_child_count)),
+                box("Enfants apres", as.character(compare$after_child_count))
+              ),
+              if (nrow(compare$child_compare) == 0) {
+                tags$p(class = "validation-note", "Aucun enfant a comparer entre l'avant et l'apres.")
+              } else {
+                DT::DTOutput("validation_detail_modification_compare")
+              }
+            )
+          }
         )
       }
     )

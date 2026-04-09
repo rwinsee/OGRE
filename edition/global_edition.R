@@ -1659,6 +1659,270 @@ child_df_from_vectors <- function(child_codes, child_labels) {
   )
 }
 
+find_stock_family_by_id <- function(stock_families, id_famille) {
+  if (is.null(stock_families) || nrow(stock_families) == 0) {
+    return(NULL)
+  }
+  
+  id_famille <- as.character(id_famille)[1]
+  
+  if (length(id_famille) == 0 || is.na(id_famille) || !nzchar(id_famille)) {
+    return(NULL)
+  }
+  
+  match_idx <- which(as.character(stock_families$id_famille) == id_famille)
+  
+  if (length(match_idx) == 0) {
+    return(NULL)
+  }
+  
+  stock_families[match_idx[1], , drop = FALSE]
+}
+
+format_family_reference <- function(code_ogr, libelle, empty_label = "Aucun") {
+  code_ogr <- as.character(code_ogr)[1]
+  libelle <- as.character(libelle)[1]
+  
+  has_code <- length(code_ogr) > 0 && !is.na(code_ogr) && nzchar(code_ogr)
+  has_label <- length(libelle) > 0 && !is.na(libelle) && nzchar(libelle)
+  
+  if (has_code && has_label) {
+    return(paste0(libelle, " [", code_ogr, "]"))
+  }
+  
+  if (has_label) {
+    return(libelle)
+  }
+  
+  if (has_code) {
+    return(code_ogr)
+  }
+  
+  empty_label
+}
+
+build_before_after_child_df <- function(before_codes, before_labels, after_codes, after_labels) {
+  before_df <- child_df_from_vectors(before_codes, before_labels)
+  after_df <- child_df_from_vectors(after_codes, after_labels)
+  compare_rows <- list()
+  
+  register_rows <- function(df, state = c("before", "after")) {
+    state <- match.arg(state)
+    
+    if (nrow(df) == 0) {
+      return(invisible(NULL))
+    }
+    
+    for (i in seq_len(nrow(df))) {
+      code_ogr <- as.character(df$code_ogr[i])
+      libelle <- as.character(df$libelle[i])
+      
+      row_key <- if (!is.na(code_ogr) && nzchar(code_ogr)) {
+        paste0("code:", code_ogr)
+      } else if (!is.na(libelle) && nzchar(libelle)) {
+        paste0("label:", libelle)
+      } else {
+        paste0("row:", state, ":", i)
+      }
+      
+      row_value <- compare_rows[[row_key]]
+      
+      if (is.null(row_value)) {
+        row_value <- list(
+          code_ogr = "",
+          libelle = "",
+          before = FALSE,
+          after = FALSE
+        )
+      }
+      
+      row_value$code_ogr <- first_non_empty(row_value$code_ogr, code_ogr)
+      row_value$libelle <- first_non_empty(row_value$libelle, libelle)
+      row_value[[state]] <- TRUE
+      compare_rows[[row_key]] <<- row_value
+    }
+    
+    invisible(NULL)
+  }
+  
+  register_rows(before_df, "before")
+  register_rows(after_df, "after")
+  
+  if (length(compare_rows) == 0) {
+    return(data.frame(
+      code_ogr = character(),
+      libelle = character(),
+      avant = character(),
+      apres = character(),
+      evolution = character(),
+      stringsAsFactors = FALSE
+    ))
+  }
+  
+  compare_df <- do.call(rbind, lapply(compare_rows, function(row_value) {
+    data.frame(
+      code_ogr = first_non_empty(row_value$code_ogr, "-"),
+      libelle = first_non_empty(row_value$libelle, "-"),
+      avant = if (isTRUE(row_value$before)) "Oui" else "-",
+      apres = if (isTRUE(row_value$after)) "Oui" else "-",
+      evolution = if (isTRUE(row_value$before) && isTRUE(row_value$after)) {
+        "Conserve"
+      } else if (isTRUE(row_value$after)) {
+        "Ajoute"
+      } else {
+        "Retire"
+      },
+      stringsAsFactors = FALSE
+    )
+  }))
+  
+  compare_df$sort_order <- match(compare_df$evolution, c("Ajoute", "Retire", "Conserve"))
+  compare_df <- compare_df[
+    order(compare_df$sort_order, compare_df$libelle, compare_df$code_ogr),
+    c("code_ogr", "libelle", "avant", "apres", "evolution"),
+    drop = FALSE
+  ]
+  rownames(compare_df) <- NULL
+  compare_df
+}
+
+build_modification_compare <- function(proposal_row, stock_families) {
+  empty_child_compare <- build_before_after_child_df(
+    character(0),
+    character(0),
+    character(0),
+    character(0)
+  )
+  
+  if (is.null(proposal_row) || nrow(proposal_row) == 0) {
+    return(list(
+      is_modification = FALSE,
+      available = FALSE,
+      reason = "",
+      base_family_id = "",
+      base_family = NULL,
+      parent_before = "Aucun",
+      parent_after = "Aucun",
+      before_child_count = 0L,
+      after_child_count = 0L,
+      child_compare = empty_child_compare
+    ))
+  }
+  
+  after_child_codes <- split_pipe_values(proposal_row$codes_ogr_enfants[1])
+  after_child_labels <- split_pipe_values(proposal_row$libelles_enfants[1])
+  after_child_count <- nrow(child_df_from_vectors(after_child_codes, after_child_labels))
+  parent_after <- format_family_reference(
+    proposal_row$code_ogr_parent[1],
+    proposal_row$libelle_parent[1]
+  )
+  
+  if (!identical(as.character(proposal_row$type_operation[1]), "modification")) {
+    return(list(
+      is_modification = FALSE,
+      available = FALSE,
+      reason = "",
+      base_family_id = "",
+      base_family = NULL,
+      parent_before = "Aucun",
+      parent_after = parent_after,
+      before_child_count = 0L,
+      after_child_count = after_child_count,
+      child_compare = empty_child_compare
+    ))
+  }
+  
+  base_family_id <- first_non_empty(proposal_row$base_famille_id[1], "")
+  
+  if (!nzchar(base_family_id)) {
+    return(list(
+      is_modification = TRUE,
+      available = FALSE,
+      reason = "Famille stock de base non renseignee pour comparer l'avant/apres.",
+      base_family_id = "",
+      base_family = NULL,
+      parent_before = "Aucune",
+      parent_after = parent_after,
+      before_child_count = 0L,
+      after_child_count = after_child_count,
+      child_compare = empty_child_compare
+    ))
+  }
+  
+  base_family <- find_stock_family_by_id(stock_families, base_family_id)
+  
+  if (is.null(base_family)) {
+    return(list(
+      is_modification = TRUE,
+      available = FALSE,
+      reason = paste("Famille stock de base", base_family_id, "introuvable pour comparer l'avant/apres."),
+      base_family_id = base_family_id,
+      base_family = NULL,
+      parent_before = "Introuvable",
+      parent_after = parent_after,
+      before_child_count = 0L,
+      after_child_count = after_child_count,
+      child_compare = empty_child_compare
+    ))
+  }
+  
+  before_child_codes <- split_pipe_values(base_family$codes_ogr_enfants[1])
+  before_child_labels <- split_pipe_values(base_family$libelles_enfants[1])
+  before_child_count <- nrow(child_df_from_vectors(before_child_codes, before_child_labels))
+  
+  list(
+    is_modification = TRUE,
+    available = TRUE,
+    reason = "",
+    base_family_id = base_family_id,
+    base_family = base_family,
+    parent_before = format_family_reference(
+      base_family$code_ogr_parent[1],
+      base_family$libelle_parent[1]
+    ),
+    parent_after = parent_after,
+    before_child_count = before_child_count,
+    after_child_count = after_child_count,
+    child_compare = build_before_after_child_df(
+      before_child_codes,
+      before_child_labels,
+      after_child_codes,
+      after_child_labels
+    )
+  )
+}
+
+make_modification_compare_datatable <- function(compare_df) {
+  DT::datatable(
+    compare_df,
+    rownames = FALSE,
+    selection = "none",
+    class = "compact stripe hover",
+    colnames = c("Code OGR", "Libelle", "Avant", "Apres", "Evolution"),
+    options = list(
+      dom = "t",
+      paging = FALSE,
+      searching = FALSE,
+      info = FALSE,
+      ordering = FALSE,
+      autoWidth = TRUE,
+      scrollX = TRUE
+    )
+  ) %>%
+    DT::formatStyle(
+      "evolution",
+      fontWeight = "600",
+      color = DT::styleEqual(
+        c("Ajoute", "Retire", "Conserve"),
+        c("#177245", "#b85a00", "#5f718d")
+      )
+    ) %>%
+    DT::formatStyle(
+      c("avant", "apres"),
+      color = DT::styleEqual(c("Oui", "-"), c("#177245", "#a0acba"))
+    )
+}
+
 collapse_reference_labels <- function(code_ogr, libelle) {
   code_ogr <- as.character(code_ogr)
   libelle <- as.character(libelle)

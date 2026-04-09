@@ -653,10 +653,6 @@ edition_ui <- function() {
             inline_info("Cet onglet sert surtout a verifier qu'une famille proche n'existe pas deja.")
           ),
           uiOutput("stock_families_notice"),
-          div(
-            class = "action-row",
-            actionButton("delete_family", "Supprimer la famille selectionnee", class = "btn-danger")
-          ),
           br(),
           DTOutput("table_families")
         ),

@@ -63,6 +63,16 @@ supervision_server <- function(input, output, session) {
     df[idx, , drop = FALSE]
   })
   
+  supervision_modification_compare <- reactive({
+    proposal <- selected_supervision()
+    
+    if (is.null(proposal)) {
+      return(NULL)
+    }
+    
+    build_modification_compare(proposal, stock_families())
+  })
+  
   observe({
     ref_choices <- build_reference_choices(
       ref_ogr %>%
@@ -356,6 +366,16 @@ supervision_server <- function(input, output, session) {
     )
   })
   
+  output$supervision_modification_compare <- DT::renderDT({
+    compare <- supervision_modification_compare()
+    
+    if (is.null(compare) || !isTRUE(compare$available)) {
+      return(NULL)
+    }
+    
+    make_modification_compare_datatable(compare$child_compare)
+  })
+  
   output$supervision_detail <- renderUI({
     proposal <- selected_supervision()
     
@@ -373,6 +393,8 @@ supervision_server <- function(input, output, session) {
       split_pipe_values(proposal$libelles_enfants_edition[1])
     )
     
+    compare <- supervision_modification_compare()
+    
     box <- function(label, value) {
       tags$div(
         class = "supervision-detail-box",
@@ -381,28 +403,58 @@ supervision_server <- function(input, output, session) {
       )
     }
     
-    tags$div(
-      class = "supervision-detail-grid",
-      box("ID proposition", proposal$id_proposition[1]),
-      box("Lignee", proposal$id_lignee[1]),
-      box("Phase courante", paste(proposal$phase_proposition[1], proposal$statut_proposition[1])),
-      box("Prochaine action", dplyr::case_when(
-        proposal$statut_proposition[1] == "a_superviser" ~ "Prendre en charge",
-        proposal$statut_proposition[1] == "en_cours" ~ "Decider puis envoyer MOA ou rejeter",
-        proposal$statut_proposition[1] == "rejetes" ~ "Creer une reprise",
-        TRUE ~ ""
-      )),
-      box("Operation", proposal$type_operation[1]),
-      box("Edition", paste(proposal$idep_agent_edition[1], proposal$horodatage_edition[1])),
-      box("Supervision", paste(first_non_empty(proposal$idep_agent_supervision[1], "Non prise en charge"), first_non_empty(proposal$horodatage_prise_en_charge_supervision[1], ""))),
-      box("Parent edition", paste0(proposal$libelle_parent_edition[1], " [", proposal$code_ogr_parent_edition[1], "]")),
-      box("Parent courant", paste0(proposal$libelle_parent[1], " [", proposal$code_ogr_parent[1], "]")),
-      box("Delta edition", paste("Ajoutes :", first_non_empty(proposal$delta_enfants_ajoutes_edition[1], "Aucun"), "| Retires :", first_non_empty(proposal$delta_enfants_retires_edition[1], "Aucun"))),
-      box("Enfants edition", if (nrow(edition_children) == 0) "Aucun" else as.character(nrow(edition_children))),
-      box("Enfants courants", if (nrow(current_children) == 0) "Aucun" else as.character(nrow(current_children))),
-      box("Decision supervision", first_non_empty(proposal$decision_supervision[1], "Pas encore tranchee")),
-      box("Commentaire supervision", first_non_empty(proposal$commentaire_supervision[1], "Aucun commentaire")),
-      box("Source", first_non_empty(proposal$id_proposition_source[1], "Aucune reprise"))
+    tagList(
+      tags$div(
+        class = "supervision-detail-grid",
+        box("ID proposition", proposal$id_proposition[1]),
+        box("Lignee", proposal$id_lignee[1]),
+        box("Phase courante", paste(proposal$phase_proposition[1], proposal$statut_proposition[1])),
+        box("Prochaine action", dplyr::case_when(
+          proposal$statut_proposition[1] == "a_superviser" ~ "Prendre en charge",
+          proposal$statut_proposition[1] == "en_cours" ~ "Decider puis envoyer MOA ou rejeter",
+          proposal$statut_proposition[1] == "rejetes" ~ "Creer une reprise",
+          TRUE ~ ""
+        )),
+        box("Operation", proposal$type_operation[1]),
+        box("Edition", paste(proposal$idep_agent_edition[1], proposal$horodatage_edition[1])),
+        box("Supervision", paste(first_non_empty(proposal$idep_agent_supervision[1], "Non prise en charge"), first_non_empty(proposal$horodatage_prise_en_charge_supervision[1], ""))),
+        box("Parent edition", paste0(proposal$libelle_parent_edition[1], " [", proposal$code_ogr_parent_edition[1], "]")),
+        box("Parent courant", paste0(proposal$libelle_parent[1], " [", proposal$code_ogr_parent[1], "]")),
+        box("Delta edition", paste("Ajoutes :", first_non_empty(proposal$delta_enfants_ajoutes_edition[1], "Aucun"), "| Retires :", first_non_empty(proposal$delta_enfants_retires_edition[1], "Aucun"))),
+        box("Enfants edition", if (nrow(edition_children) == 0) "Aucun" else as.character(nrow(edition_children))),
+        box("Enfants courants", if (nrow(current_children) == 0) "Aucun" else as.character(nrow(current_children))),
+        box("Decision supervision", first_non_empty(proposal$decision_supervision[1], "Pas encore tranchee")),
+        box("Commentaire supervision", first_non_empty(proposal$commentaire_supervision[1], "Aucun commentaire")),
+        box("Source", first_non_empty(proposal$id_proposition_source[1], "Aucune reprise"))
+      ),
+      if (!is.null(compare) && isTRUE(compare$is_modification)) {
+        tagList(
+          tags$hr(),
+          tags$h4("Comparatif avant / apres"),
+          if (!isTRUE(compare$available)) {
+            tags$p(class = "supervision-note", compare$reason)
+          } else {
+            tagList(
+              tags$p(
+                class = "supervision-note",
+                paste("Base stock :", compare$base_family_id)
+              ),
+              tags$div(
+                class = "supervision-detail-grid",
+                box("Parent avant", compare$parent_before),
+                box("Parent apres", compare$parent_after),
+                box("Enfants avant", as.character(compare$before_child_count)),
+                box("Enfants apres", as.character(compare$after_child_count))
+              ),
+              if (nrow(compare$child_compare) == 0) {
+                tags$p(class = "supervision-note", "Aucun enfant a comparer entre l'avant et l'apres.")
+              } else {
+                DT::DTOutput("supervision_modification_compare")
+              }
+            )
+          }
+        )
+      }
     )
   })
   

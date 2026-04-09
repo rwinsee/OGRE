@@ -214,6 +214,40 @@ supervision_ui <- function() {
           font-size: 12px;
           line-height: 1.5;
         }
+        .supervision-subpanel-tabs > .nav {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          border-bottom: none;
+          margin: 4px 0 14px;
+        }
+        .supervision-subpanel-tabs > .nav > li {
+          float: none;
+          margin: 0;
+        }
+        .supervision-subpanel-tabs > .nav > li > a {
+          border: 1px solid #d6e1ef;
+          border-radius: 999px;
+          background: #f7f9fc;
+          color: #35506b;
+          font-size: 12px;
+          font-weight: 700;
+          padding: 8px 14px;
+        }
+        .supervision-subpanel-tabs > .nav > li > a:hover {
+          background: #eef3f9;
+          border-color: #c4d4e8;
+        }
+        .supervision-subpanel-tabs > .nav > li.active > a,
+        .supervision-subpanel-tabs > .nav > li.active > a:hover,
+        .supervision-subpanel-tabs > .nav > li.active > a:focus {
+          background: #17324d;
+          border-color: #17324d;
+          color: #ffffff;
+        }
+        .supervision-subpanel-content {
+          min-height: 220px;
+        }
         .supervision-dt .dt-buttons {
           margin-bottom: 10px;
         }
@@ -289,47 +323,63 @@ supervision_ui <- function() {
       div(
         div(
           class = "supervision-card",
-          section_title_with_info("Prise en charge", "Cette zone change selon l'etat du dossier : prise en charge, decision de supervision ou reprise d'edition."),
-          uiOutput("supervision_action_context"),
-          textInput(
-            "supervision_agent",
-            label_with_info("IDEP supervision", "Cet identifiant trace le superviseur qui prend en charge ou tranche le dossier."),
-            value = "DFEC5Z"
-          ),
-          textAreaInput(
-            "supervision_comment",
-            label_with_info("Commentaire supervision", "Utile pour motiver une modification, un rejet ou une consigne transmise a la MOA."),
-            rows = 4,
-            placeholder = "Motiver la decision, la modification ou le rejet."
-          ),
-          textInput(
-            "reprise_idep_agent",
-            label_with_info("IDEP reprise edition", "Utilise cet identifiant quand tu recrees une reprise vers l'edition apres rejet."),
-            value = "DFEC5Z"
-          ),
-          div(class = "supervision-note", "La supervision peut prendre en charge, modifier, rejeter ou recreer une reprise sans effacer le fichier source."),
-          uiOutput("supervision_action_panel")
-        ),
-        div(
-          class = "supervision-card",
-          section_title_with_info("Ajustement supervision", "Cette zone sert a corriger le parent ou les enfants avant envoi en validation MOA."),
-          uiOutput("supervision_edit_state"),
-          selectizeInput(
-            "supervision_parent_code",
-            label_with_info("Parent supervision", "Choisis ici le parent retenu apres arbitrage supervision."),
-            choices = character(0),
-            selected = NULL,
-            options = list(placeholder = "Choisir le parent pour la supervision")
-          ),
-          selectizeInput(
-            "supervision_child_codes",
-            label_with_info("Enfants supervision", "Garde uniquement les enfants a transmettre dans la version supervision."),
-            choices = character(0),
-            selected = NULL,
-            multiple = TRUE,
-            options = list(placeholder = "Choisir les enfants pour la supervision")
-          ),
-          uiOutput("supervision_edit_preview")
+          div(
+            class = "supervision-subpanel-tabs",
+            tabsetPanel(
+              id = "supervision_left_panel",
+              type = "tabs",
+              tabPanel(
+                "Prise en charge",
+                div(
+                  class = "supervision-subpanel-content",
+                  section_title_with_info("Prise en charge", "Cette zone change selon l'etat du dossier : prise en charge, decision de supervision ou reprise d'edition."),
+                  uiOutput("supervision_action_context"),
+                  textInput(
+                    "supervision_agent",
+                    label_with_info("IDEP supervision", "Cet identifiant trace le superviseur qui prend en charge ou tranche le dossier."),
+                    value = "DFEC5Z"
+                  ),
+                  textAreaInput(
+                    "supervision_comment",
+                    label_with_info("Commentaire supervision", "Utile pour motiver une modification, un rejet ou une consigne transmise a la MOA."),
+                    rows = 4,
+                    placeholder = "Motiver la decision, la modification ou le rejet."
+                  ),
+                  textInput(
+                    "reprise_idep_agent",
+                    label_with_info("IDEP reprise edition", "Utilise cet identifiant quand tu recrees une reprise vers l'edition apres rejet."),
+                    value = "DFEC5Z"
+                  ),
+                  div(class = "supervision-note", "La supervision peut prendre en charge, modifier, rejeter ou recreer une reprise sans effacer le fichier source."),
+                  uiOutput("supervision_action_panel")
+                )
+              ),
+              tabPanel(
+                "Ajustement supervision",
+                div(
+                  class = "supervision-subpanel-content",
+                  section_title_with_info("Ajustement supervision", "Cette zone sert a corriger le parent ou les enfants avant envoi en validation MOA."),
+                  uiOutput("supervision_edit_state"),
+                  selectizeInput(
+                    "supervision_parent_code",
+                    label_with_info("Parent supervision", "Choisis ici le parent retenu apres arbitrage supervision."),
+                    choices = character(0),
+                    selected = NULL,
+                    options = list(placeholder = "Choisir le parent pour la supervision")
+                  ),
+                  selectizeInput(
+                    "supervision_child_codes",
+                    label_with_info("Enfants supervision", "Garde uniquement les enfants a transmettre dans la version supervision."),
+                    choices = character(0),
+                    selected = NULL,
+                    multiple = TRUE,
+                    options = list(placeholder = "Choisir les enfants pour la supervision")
+                  ),
+                  uiOutput("supervision_edit_preview")
+                )
+              )
+            )
+          )
         )
       ),
       div(

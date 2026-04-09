@@ -458,15 +458,22 @@ edition_server <- function(input, output, session) {
   })
 
   output$stock_families_notice <- renderUI({
-    if (nrow(families_data()) > 0) {
-      return(NULL)
-    }
-
     tags$div(
       class = "app-card",
+      if (nrow(families_data()) == 0) {
+        tags$p(
+          tags$strong("Aucune famille publiee pour le moment. "),
+          "Le stock sera alimente apres publication d'une proposition en validation MOA."
+        )
+      } else {
+        tags$p(
+          tags$strong("Stock en lecture seule dans Edition. "),
+          "Cet onglet sert a consulter l'etat publie. Une famille validee par la MOA ne peut pas etre supprimee directement ici."
+        )
+      },
       tags$p(
-        tags$strong("Aucune famille publiee pour le moment. "),
-        "Le stock sera alimente apres publication d'une proposition en validation MOA."
+        class = "action-help",
+        "Si une famille publiee doit evoluer, il faut repartir sur une nouvelle proposition puis laisser la decision finale a la validation MOA."
       )
     )
   })
@@ -951,40 +958,6 @@ edition_server <- function(input, output, session) {
     removeModal()
     pending_conflict_draft(NULL)
     save_draft_proposal(draft)
-  })
-  
-  observeEvent(input$delete_family, {
-    family <- selected_family()
-    
-    if (is.null(family)) {
-      showNotification("Selectionnez une famille a supprimer.", type = "warning")
-      return()
-    }
-    
-    showModal(modalDialog(
-      title = "Supprimer la famille",
-      p("Voulez-vous vraiment supprimer cette famille ?"),
-      p(paste("ID :", family$id_famille[1])),
-      p(paste("Parent :", family$libelle_parent[1])),
-      easyClose = TRUE,
-      footer = tagList(
-        modalButton("Annuler"),
-        actionButton("confirm_delete_family", "Supprimer", class = "btn-danger")
-      )
-    ))
-  })
-  
-  observeEvent(input$confirm_delete_family, {
-    family <- selected_family()
-    if (is.null(family)) {
-      removeModal()
-      return()
-    }
-    
-    delete_family_by_id(family$id_famille[1])
-    removeModal()
-    refresh_token(refresh_token() + 1)
-    showNotification("Famille supprimee.", type = "message")
   })
   
   observeEvent(input$delete_proposal, {

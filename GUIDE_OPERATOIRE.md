@@ -82,8 +82,8 @@ L'application :
 - `Verifier la filiation` controle sans enregistrer
 - creer une proposition en edition ne publie rien dans le stock
 - l'onglet `Stock existant` peut etre vide, ce qui est normal tant qu'aucune famille n'a ete publiee
+- `Stock existant` est en lecture seule dans `Edition`
 - l'onglet `Propositions` permet de relire ou de supprimer une proposition locale
-- l'onglet `Stock existant` permet aussi de supprimer une famille deja stockee si l'usage local le permet
 
 ## Partie 2 - Supervision
 
@@ -93,8 +93,7 @@ La supervision relit et arbitre les propositions avant envoi a la MOA.
 ### Ce que voit le superviseur
 L'ecran Supervision comprend :
 
-- une zone `Prise en charge`
-- une zone `Ajustement supervision`
+- un bloc a onglets : `Prise en charge`, `Ajustement supervision`
 - des KPI de suivi de file
 - une file `A superviser`
 - une file `En cours`
