@@ -1,0 +1,173 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1460" height="1100" viewBox="0 0 1460 1100" role="img" aria-labelledby="title desc">
+  <title id="title">Workflow OGRE edition vers validation</title>
+  <desc id="desc">Schema du workflow Edition, Supervision, Validation MOA et publication dans le stock et le referentiel EDEP.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#36506a"/>
+    </marker>
+    <marker id="arrowSoft" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8aa0b8"/>
+    </marker>
+    <style>
+      .lane { fill: #f7f9fc; stroke: #d8e2ee; stroke-width: 1.5; rx: 24; ry: 24; }
+      .lane-title { font: 700 22px sans-serif; fill: #17324d; }
+      .lane-subtitle { font: 400 12px sans-serif; fill: #6a7d94; }
+      .card { fill: #ffffff; stroke: #cfdae7; stroke-width: 1.5; rx: 18; ry: 18; }
+      .card.edition { fill: #eef7ff; stroke: #c9ddf2; }
+      .card.supervision { fill: #fff4f7; stroke: #f0d0db; }
+      .card.validation { fill: #eef9f1; stroke: #cde5d5; }
+      .card.publish { fill: #fff7ea; stroke: #f0ddaf; }
+      .decision { fill: #ffffff; stroke: #cfdae7; stroke-width: 1.5; }
+      .note { fill: #fbfcfe; stroke: #d8e2ee; stroke-width: 1.5; stroke-dasharray: 6 6; rx: 16; ry: 16; }
+      .card-title { font: 700 15px sans-serif; fill: #17324d; }
+      .card-text { font: 400 12px sans-serif; fill: #36506a; }
+      .small-text { font: 400 11px sans-serif; fill: #60748c; }
+      .line { fill: none; stroke: #36506a; stroke-width: 2.5; marker-end: url(#arrow); }
+      .line-soft { fill: none; stroke: #8aa0b8; stroke-width: 2; stroke-dasharray: 6 5; marker-end: url(#arrowSoft); }
+      .title { font: 700 30px sans-serif; fill: #17324d; }
+      .subtitle { font: 400 14px sans-serif; fill: #60748c; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1460" height="1100" fill="#ffffff"/>
+  <text x="40" y="48" class="title">Workflow OGRE : Edition -> Supervision -> Validation -> Publication</text>
+  <text x="40" y="74" class="subtitle">Version image compatible avec l'apercu Markdown de RStudio.</text>
+
+  <rect x="30" y="100" width="320" height="950" class="lane"/>
+  <rect x="380" y="100" width="320" height="950" class="lane"/>
+  <rect x="730" y="100" width="320" height="950" class="lane"/>
+  <rect x="1080" y="100" width="320" height="950" class="lane"/>
+
+  <text x="60" y="140" class="lane-title">Edition</text>
+  <text x="60" y="160" class="lane-subtitle">Preparation de la proposition</text>
+
+  <text x="410" y="140" class="lane-title">Supervision</text>
+  <text x="410" y="160" class="lane-subtitle">Arbitrage avant MOA</text>
+
+  <text x="760" y="140" class="lane-title">Validation MOA</text>
+  <text x="760" y="160" class="lane-subtitle">Decision finale</text>
+
+  <text x="1110" y="140" class="lane-title">Publication</text>
+  <text x="1110" y="160" class="lane-subtitle">Stock et referentiel EDEP</text>
+
+  <rect x="60" y="200" width="260" height="92" class="card edition"/>
+  <text x="86" y="228" class="card-title">1. Selection</text>
+  <text x="86" y="250" class="card-text">Filtrer le referentiel OGR</text>
+  <text x="86" y="268" class="card-text">et retenir les lignes utiles</text>
+
+  <rect x="60" y="340" width="260" height="112" class="card edition"/>
+  <text x="86" y="368" class="card-title">2. Composer une famille</text>
+  <text x="86" y="390" class="card-text">Renseigner l'IDEP agent</text>
+  <text x="86" y="408" class="card-text">Choisir 1 parent</text>
+  <text x="86" y="426" class="card-text">Choisir les enfants</text>
+
+  <rect x="60" y="500" width="260" height="112" class="card edition"/>
+  <text x="86" y="528" class="card-title">3. Verifier avant creation</text>
+  <text x="86" y="550" class="card-text">Verifier la filiation</text>
+  <text x="86" y="568" class="card-text">Lire Resume et Preconisations</text>
+  <text x="86" y="586" class="card-text">Controler sans enregistrer</text>
+
+  <rect x="60" y="660" width="260" height="92" class="card edition"/>
+  <text x="86" y="688" class="card-title">4. Creer la proposition</text>
+  <text x="86" y="710" class="card-text">Creation du dossier trace</text>
+  <text x="86" y="728" class="card-text">et depot en supervision</text>
+
+  <rect x="90" y="790" width="200" height="74" class="note"/>
+  <text x="112" y="818" class="card-title">Important</text>
+  <text x="112" y="840" class="small-text">A ce stade, le stock ne change pas.</text>
+
+  <rect x="410" y="220" width="260" height="92" class="card supervision"/>
+  <text x="436" y="248" class="card-title">5. A superviser</text>
+  <text x="436" y="270" class="card-text">Prendre en charge</text>
+  <text x="436" y="288" class="card-text">pour ouvrir la decision</text>
+
+  <polygon points="540,365 635,430 540,495 445,430" class="decision"/>
+  <text x="500" y="424" class="card-title">Decision</text>
+  <text x="493" y="444" class="card-title">supervision</text>
+
+  <rect x="410" y="560" width="260" height="90" class="card supervision"/>
+  <text x="436" y="588" class="card-title">6A. Envoyer a la MOA</text>
+  <text x="436" y="610" class="card-text">En l'etat ou apres modification</text>
+  <text x="436" y="628" class="card-text">vers validation / a_valider</text>
+
+  <rect x="410" y="730" width="260" height="92" class="card supervision"/>
+  <text x="436" y="758" class="card-title">6B. Rejeter</text>
+  <text x="436" y="780" class="card-text">Le dossier va dans</text>
+  <text x="436" y="798" class="card-text">supervision / rejetes</text>
+
+  <polygon points="540,875 635,940 540,1005 445,940" class="decision"/>
+  <text x="503" y="934" class="card-title">Relancer</text>
+  <text x="499" y="954" class="card-title">le dossier ?</text>
+
+  <rect x="760" y="240" width="260" height="92" class="card validation"/>
+  <text x="786" y="268" class="card-title">7. A valider</text>
+  <text x="786" y="290" class="card-text">Prendre en charge cote MOA</text>
+  <text x="786" y="308" class="card-text">pour instruire le dossier</text>
+
+  <polygon points="890,400 985,465 890,530 795,465" class="decision"/>
+  <text x="850" y="459" class="card-title">Decision</text>
+  <text x="856" y="479" class="card-title">MOA</text>
+
+  <rect x="760" y="590" width="260" height="92" class="card validation"/>
+  <text x="786" y="618" class="card-title">8A. Mettre en attente</text>
+  <text x="786" y="640" class="card-text">Le dossier va dans</text>
+  <text x="786" y="658" class="card-text">validation / en_attente</text>
+
+  <rect x="760" y="730" width="260" height="92" class="card validation"/>
+  <text x="786" y="758" class="card-title">8B. Rejeter</text>
+  <text x="786" y="780" class="card-text">Le dossier va dans</text>
+  <text x="786" y="798" class="card-text">validation / rejetes</text>
+
+  <rect x="760" y="870" width="260" height="92" class="card validation"/>
+  <text x="786" y="898" class="card-title">8C. Publier dans le stock</text>
+  <text x="786" y="920" class="card-text">Le dossier passe dans</text>
+  <text x="786" y="938" class="card-text">validation / valides</text>
+
+  <rect x="1110" y="330" width="260" height="92" class="card publish"/>
+  <text x="1136" y="358" class="card-title">9. Stock familles</text>
+  <text x="1136" y="380" class="card-text">Creation ou remplacement</text>
+  <text x="1136" y="398" class="card-text">de la famille publiee</text>
+
+  <rect x="1110" y="510" width="260" height="92" class="card publish"/>
+  <text x="1136" y="538" class="card-title">10. Referentiel EDEP</text>
+  <text x="1136" y="560" class="card-text">Mise a jour des liens</text>
+  <text x="1136" y="578" class="card-text">parent -> enfants</text>
+
+  <rect x="1110" y="700" width="260" height="112" class="note"/>
+  <text x="1136" y="728" class="card-title">Lecture utile</text>
+  <text x="1136" y="750" class="small-text">Stock familles = etat publie</text>
+  <text x="1136" y="768" class="small-text">Referentiel EDEP = vue aval</text>
+  <text x="1136" y="786" class="small-text">des publications MOA</text>
+
+  <path d="M 190 292 L 190 340" class="line"/>
+  <path d="M 190 452 L 190 500" class="line"/>
+  <path d="M 190 612 L 190 660" class="line"/>
+  <path d="M 320 706 L 410 266" class="line"/>
+  <path d="M 190 752 L 190 790" class="line-soft"/>
+
+  <path d="M 540 312 L 540 365" class="line"/>
+  <path d="M 540 495 L 540 560" class="line"/>
+  <path d="M 635 430 L 730 286" class="line"/>
+  <path d="M 540 495 L 540 730" class="line"/>
+  <path d="M 540 822 L 540 875" class="line"/>
+  <path d="M 635 940 C 700 940 700 266 730 266" class="line"/>
+  <path d="M 445 940 C 360 940 360 776 410 776" class="line-soft"/>
+  <text x="650" y="915" class="small-text">Oui</text>
+  <text x="392" y="915" class="small-text">Non</text>
+  <text x="648" y="417" class="small-text">Accepter</text>
+  <text x="553" y="544" class="small-text">Modifier ou valider</text>
+  <text x="553" y="706" class="small-text">Rejeter</text>
+
+  <path d="M 890 332 L 890 400" class="line"/>
+  <path d="M 890 530 L 890 590" class="line"/>
+  <path d="M 795 465 L 760 776" class="line"/>
+  <path d="M 890 682 C 1030 682 1030 286 1020 286" class="line-soft"/>
+  <path d="M 890 530 L 890 870" class="line"/>
+  <text x="912" y="575" class="small-text">Attente</text>
+  <text x="760" y="560" class="small-text">Rejet</text>
+  <text x="905" y="842" class="small-text">Publication</text>
+  <text x="1036" y="664" class="small-text">Reprendre</text>
+
+  <path d="M 1020 916 L 1110 376" class="line"/>
+  <path d="M 1240 422 L 1240 510" class="line"/>
+</svg>
