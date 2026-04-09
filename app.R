@@ -1,3 +1,24 @@
+packages <- c("dplyr", "DT")
+
+for (pkg in packages) {
+  
+  cat("\n-----------------------------\n")
+  cat("Traitement du package :", pkg, "\n")
+  
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    cat("Le package", pkg, "n'est pas installé. Installation en cours...\n")
+    install.packages(pkg)
+    cat("Installation terminée pour", pkg, "\n")
+  } else {
+    cat("Le package", pkg, "est déjà installé.\n")
+  }
+  
+  cat("Chargement du package", pkg, "...\n")
+  library(pkg, character.only = TRUE)
+  
+  print(paste("Le package", pkg, "est maintenant chargé."))
+}
+
 source(file.path("edition", "global_edition.R"), local = TRUE)
 source(file.path("edition", "ui_edition.R"), local = TRUE)
 source(file.path("edition", "server_edition.R"), local = TRUE)
@@ -7,6 +28,7 @@ source(file.path("supervision", "server_supervision.R"), local = TRUE)
 source(file.path("validation", "global_validation.R"), local = TRUE)
 source(file.path("validation", "ui_validation.R"), local = TRUE)
 source(file.path("validation", "server_validation.R"), local = TRUE)
+
 
 ui <- fluidPage(
   title = "OGRE - Outil de Gestion du ROME pour EDEP",
@@ -116,13 +138,13 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   session$userData$workflow_refresh <- reactiveVal(0)
-
+  
   observeEvent(input$refresh_workflow, {
     token <- session$userData$workflow_refresh
     token(token() + 1)
     showNotification("Files de workflow rafraichies.", type = "message")
   })
-
+  
   edition_server(input, output, session)
   supervision_server(input, output, session)
   validation_server(input, output, session)
