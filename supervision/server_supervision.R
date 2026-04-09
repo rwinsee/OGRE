@@ -273,34 +273,55 @@ supervision_server <- function(input, output, session) {
     mode <- match.arg(mode)
     
     displayed <- df %>%
-      select(
-        id_proposition,
-        type_operation,
-        idep_agent_edition,
-        idep_agent_supervision,
-        code_ogr_parent,
-        libelle_parent,
-        nb_enfants,
-        decision_supervision,
-        horodatage_edition,
-        horodatage_prise_en_charge_supervision,
-        horodatage_decision_supervision
+      transmute(
+        `ID proposition` = id_proposition,
+        Operation = type_operation,
+        `IDEP edition` = idep_agent_edition,
+        `IDEP supervision` = idep_agent_supervision,
+        `Code parent` = code_ogr_parent,
+        Parent = libelle_parent,
+        `Nb enfants` = nb_enfants,
+        `Decision supervision` = decision_supervision,
+        `Horodatage edition` = horodatage_edition,
+        `Prise en charge supervision` = horodatage_prise_en_charge_supervision,
+        `Decision supervision le` = horodatage_decision_supervision
       )
+
+    hidden_targets <- switch(
+      mode,
+      queue = c(3, 7, 9, 10),
+      progress = c(7, 10),
+      rejected = integer(0)
+    )
+    column_defs <- if (length(hidden_targets) == 0) {
+      list()
+    } else {
+      list(list(visible = FALSE, targets = hidden_targets))
+    }
     
     datatable(
       displayed,
+      extensions = "Buttons",
       selection = "single",
       rownames = FALSE,
-      options = list(pageLength = 8, scrollX = TRUE)
+      options = list(
+        pageLength = 8,
+        scrollX = TRUE,
+        dom = "Bfrtip",
+        buttons = list(
+          list(extend = "colvis", text = "Choisir les colonnes")
+        ),
+        columnDefs = column_defs
+      )
     ) %>%
       formatStyle(
-        "type_operation",
+        "Operation",
         backgroundColor = styleEqual(c("creation", "modification"), c("#eef7ff", "#fff1d6")),
         color = styleEqual(c("creation", "modification"), c("#1f5f8b", "#a75f00")),
         fontWeight = styleEqual(c("creation", "modification"), c("700", "700"))
       ) %>%
       formatStyle(
-        "decision_supervision",
+        "Decision supervision",
         backgroundColor = styleEqual(c("valide_en_etat", "modifie_et_valide", "rejete"), c("#e9f7ef", "#eef7ff", "#fff1d6")),
         color = styleEqual(c("valide_en_etat", "modifie_et_valide", "rejete"), c("#1e8449", "#1f5f8b", "#b45f06")),
         fontWeight = styleEqual(c("valide_en_etat", "modifie_et_valide", "rejete"), c("700", "700", "700"))

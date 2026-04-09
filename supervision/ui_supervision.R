@@ -1,4 +1,30 @@
 supervision_ui <- function() {
+  inline_info <- function(text) {
+    tags$span(
+      class = "supervision-inline-info",
+      tabindex = "0",
+      `data-tooltip` = text,
+      `aria-label` = text,
+      "i"
+    )
+  }
+
+  label_with_info <- function(label, info_text) {
+    tags$span(
+      class = "supervision-label-with-info",
+      span(label),
+      inline_info(info_text)
+    )
+  }
+
+  section_title_with_info <- function(title, info_text) {
+    div(
+      class = "supervision-section-head",
+      div(class = "supervision-section-title", title),
+      inline_info(info_text)
+    )
+  }
+
   tagList(
     tags$head(
       tags$style(HTML("
@@ -93,11 +119,116 @@ supervision_ui <- function() {
           color: #6d7d94;
           line-height: 1.5;
         }
+        .supervision-section-head {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 10px;
+          flex-wrap: wrap;
+        }
         .supervision-section-title {
           font-size: 16px;
           font-weight: 700;
           color: #17324d;
           margin-bottom: 10px;
+        }
+        .supervision-section-head .supervision-section-title {
+          margin-bottom: 0;
+        }
+        .supervision-label-with-info {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .supervision-inline-info {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          background: #17324d;
+          color: #ffffff;
+          font-size: 11px;
+          font-weight: 700;
+          line-height: 1;
+          cursor: help;
+          flex: 0 0 auto;
+        }
+        .supervision-inline-info::after {
+          content: attr(data-tooltip);
+          position: absolute;
+          left: 50%;
+          top: calc(100% + 10px);
+          transform: translateX(-50%);
+          min-width: 220px;
+          max-width: 280px;
+          padding: 10px 12px;
+          border-radius: 12px;
+          background: #17324d;
+          color: #ffffff;
+          font-size: 12px;
+          line-height: 1.45;
+          white-space: normal;
+          box-shadow: 0 14px 26px rgba(23, 43, 77, 0.18);
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+          transition: opacity 0.12s ease;
+          z-index: 20;
+        }
+        .supervision-inline-info::before {
+          content: '';
+          position: absolute;
+          left: 50%;
+          top: calc(100% + 4px);
+          transform: translateX(-50%);
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-bottom: 6px solid #17324d;
+          opacity: 0;
+          visibility: hidden;
+          transition: opacity 0.12s ease;
+          z-index: 21;
+        }
+        .supervision-inline-info:hover::after,
+        .supervision-inline-info:hover::before,
+        .supervision-inline-info:focus::after,
+        .supervision-inline-info:focus::before {
+          opacity: 1;
+          visibility: visible;
+        }
+        .supervision-inline-info:focus {
+          outline: 2px solid #8cb6dd;
+          outline-offset: 2px;
+        }
+        .supervision-tab-intro {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin: 12px 0;
+          color: #5f7793;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+        .supervision-dt .dt-buttons {
+          margin-bottom: 10px;
+        }
+        .supervision-dt .dt-button {
+          border: 1px solid #d6e1ef !important;
+          border-radius: 999px !important;
+          background: #f7f9fc !important;
+          color: #35506b !important;
+          font-size: 12px !important;
+          font-weight: 700 !important;
+          padding: 7px 12px !important;
+        }
+        .supervision-dt .dt-button:hover {
+          background: #eef3f9 !important;
+          border-color: #c4d4e8 !important;
         }
         .supervision-detail-grid {
           display: grid;
@@ -158,28 +289,41 @@ supervision_ui <- function() {
       div(
         div(
           class = "supervision-card",
-          div(class = "supervision-section-title", "Prise en charge"),
+          section_title_with_info("Prise en charge", "Cette zone change selon l'etat du dossier : prise en charge, decision de supervision ou reprise d'edition."),
           uiOutput("supervision_action_context"),
-          textInput("supervision_agent", "IDEP supervision", value = "DFEC5Z"),
-          textAreaInput("supervision_comment", "Commentaire supervision", rows = 4, placeholder = "Motiver la decision, la modification ou le rejet."),
-          textInput("reprise_idep_agent", "IDEP reprise edition", value = "DFEC5Z"),
+          textInput(
+            "supervision_agent",
+            label_with_info("IDEP supervision", "Cet identifiant trace le superviseur qui prend en charge ou tranche le dossier."),
+            value = "DFEC5Z"
+          ),
+          textAreaInput(
+            "supervision_comment",
+            label_with_info("Commentaire supervision", "Utile pour motiver une modification, un rejet ou une consigne transmise a la MOA."),
+            rows = 4,
+            placeholder = "Motiver la decision, la modification ou le rejet."
+          ),
+          textInput(
+            "reprise_idep_agent",
+            label_with_info("IDEP reprise edition", "Utilise cet identifiant quand tu recrees une reprise vers l'edition apres rejet."),
+            value = "DFEC5Z"
+          ),
           div(class = "supervision-note", "La supervision peut prendre en charge, modifier, rejeter ou recreer une reprise sans effacer le fichier source."),
           uiOutput("supervision_action_panel")
         ),
         div(
           class = "supervision-card",
-          div(class = "supervision-section-title", "Ajustement supervision"),
+          section_title_with_info("Ajustement supervision", "Cette zone sert a corriger le parent ou les enfants avant envoi en validation MOA."),
           uiOutput("supervision_edit_state"),
           selectizeInput(
             "supervision_parent_code",
-            "Parent supervision",
+            label_with_info("Parent supervision", "Choisis ici le parent retenu apres arbitrage supervision."),
             choices = character(0),
             selected = NULL,
             options = list(placeholder = "Choisir le parent pour la supervision")
           ),
           selectizeInput(
             "supervision_child_codes",
-            "Enfants supervision",
+            label_with_info("Enfants supervision", "Garde uniquement les enfants a transmettre dans la version supervision."),
             choices = character(0),
             selected = NULL,
             multiple = TRUE,
@@ -196,24 +340,36 @@ supervision_ui <- function() {
             type = "tabs",
             tabPanel(
               "A superviser",
-              br(),
-              DTOutput("table_supervision_queue")
+              div(
+                class = "supervision-tab-intro",
+                span("Vue compacte par defaut pour faciliter la prise en main."),
+                inline_info("Les colonnes supervision sont masquees tant que le dossier est juste en attente. Utilise le bouton Choisir les colonnes pour afficher plus de details.")
+              ),
+              div(class = "supervision-dt", DTOutput("table_supervision_queue"))
             ),
             tabPanel(
               "En cours",
-              br(),
-              DTOutput("table_supervision_in_progress")
+              div(
+                class = "supervision-tab-intro",
+                span("Ici, le dossier est deja pris en charge."),
+                inline_info("La vue montre davantage d'informations supervision, et tu peux toujours personnaliser l'affichage des colonnes.")
+              ),
+              div(class = "supervision-dt", DTOutput("table_supervision_in_progress"))
             ),
             tabPanel(
               "Rejetes",
-              br(),
-              DTOutput("table_supervision_rejected")
+              div(
+                class = "supervision-tab-intro",
+                span("Les rejets restent consultables pour comprendre la decision."),
+                inline_info("Le bouton Choisir les colonnes permet aussi de reafficher certains champs si tu veux analyser un cas plus finement.")
+              ),
+              div(class = "supervision-dt", DTOutput("table_supervision_rejected"))
             )
           )
         ),
         div(
           class = "supervision-card",
-          div(class = "supervision-section-title", "Detail de la proposition"),
+          section_title_with_info("Detail de la proposition", "Ce bloc resume l'etat courant du dossier et ce qui a deja ete decide ou modifie."),
           uiOutput("supervision_detail")
         )
       )

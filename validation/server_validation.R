@@ -172,88 +172,138 @@ validation_server <- function(input, output, session) {
       )
     }
     
-    section_block <- function(title, copy, cards) {
+    section_panel <- function(title, copy, cards) {
       tags$div(
-        class = "validation-kpi-section",
+        class = "validation-subpanel-content is-kpi",
         tags$div(class = "validation-kpi-section-title", title),
         tags$div(class = "validation-kpi-section-copy", copy),
         tags$div(class = "validation-kpis", cards)
       )
     }
     
-    tagList(
-      section_block(
-        "Couverture referentiel",
-        "Lecture globale des codes OGR couverts aujourd'hui par le stock publie.",
-        tagList(
-          card("Codes referentiel", length(ref_codes), "Volume total des codes OGR charges"),
-          card("Codes ROME EDEP", edep_code_n, paste(edep_removed_n, "codes enfant exclus du referentiel aval")),
-          card("Codes parents", length(parent_codes), "Codes utilises au moins une fois comme parent"),
-          card("Codes enfants", length(child_codes), "Codes mobilises comme enfants"),
-          card("Propositions edition", supervision_total_n, "Propositions issues de l'edition visibles en supervision"),
-          card("Codes sans filiation", length(codes_without_link), paste(length(codes_without_children), "codes n'ont aucun enfant"))
-        )
-      ),
-      section_block(
-        "Vue supervision",
-        "Le valideur voit l'etat amont de la supervision avant d'instruire la file MOA.",
-        tagList(
-          card("A superviser", supervision_queue_n, paste("Backlog supervision,", oldest_supervision_days, "jour(s) max d'attente")),
-          card("En cours supervision", supervision_in_progress_n, "Propositions actuellement ouvertes par les superviseurs"),
-          card("Rejetes supervision", supervision_rejected_n, "Fichiers rejetes ou a relancer cote supervision"),
-          card("Envoyees a validation", queue_n, "Propositions deja transmises par la supervision vers la MOA")
-        )
-      ),
-      section_block(
-        "Vue validation MOA",
-        "Pilotage de la decision MOA, du stock publie et du referentiel EDEP.",
-        tagList(
-          card("A valider", queue_n, paste("Backlog MOA entrant,", oldest_pending_days, "jour(s) max d'attente")),
-          card("En cours", in_progress_n, "Dossiers actuellement ouverts par la MOA"),
-          card("En attente", waiting_n, "Dossiers temporises en attente de reprise"),
-          card("Rejetes", rejected_n, "Dossiers rejetes par la MOA"),
-          card("Validees", validated_n, "Publications deja actees"),
-          card("Modifications", modification_n, "Dossiers ouverts qui remplacent une famille stock"),
-          card("Parents impactes", impacted_parent_n, "Parents distincts concernes par la file ouverte"),
-          card("Liens a publier", open_links_n, "Volume d'enfants portes par la file ouverte"),
-          card("Stock familles", nrow(stock), "Familles actuellement publiees"),
-          card("Parents EDEP", distinct_parents, "Parents distincts dans le referentiel maison"),
-          card("Liens EDEP", nrow(edep_links_df), paste(distinct_children, "enfants distincts relies"))
+    tags$div(
+      class = "validation-kpi-section",
+      div(
+        class = "validation-subpanel-tabs",
+        tabsetPanel(
+          id = "validation_kpi_tabs",
+          type = "tabs",
+          tabPanel(
+            "Couverture",
+            section_panel(
+              "Couverture referentiel",
+              "Lecture globale des codes OGR couverts aujourd'hui par le stock publie.",
+              tagList(
+                card("Codes referentiel", length(ref_codes), "Volume total des codes OGR charges"),
+                card("Codes ROME EDEP", edep_code_n, paste(edep_removed_n, "codes enfant exclus du referentiel aval")),
+                card("Codes parents", length(parent_codes), "Codes utilises au moins une fois comme parent"),
+                card("Codes enfants", length(child_codes), "Codes mobilises comme enfants"),
+                card("Propositions edition", supervision_total_n, "Propositions issues de l'edition visibles en supervision"),
+                card("Codes sans filiation", length(codes_without_link), paste(length(codes_without_children), "codes n'ont aucun enfant"))
+              )
+            )
+          ),
+          tabPanel(
+            "Supervision",
+            section_panel(
+              "Vue supervision",
+              "Le valideur voit l'etat amont de la supervision avant d'instruire la file MOA.",
+              tagList(
+                card("A superviser", supervision_queue_n, paste("Backlog supervision,", oldest_supervision_days, "jour(s) max d'attente")),
+                card("En cours supervision", supervision_in_progress_n, "Propositions actuellement ouvertes par les superviseurs"),
+                card("Rejetes supervision", supervision_rejected_n, "Fichiers rejetes ou a relancer cote supervision"),
+                card("Envoyees a validation", queue_n, "Propositions deja transmises par la supervision vers la MOA")
+              )
+            )
+          ),
+          tabPanel(
+            "Validation MOA",
+            section_panel(
+              "Vue validation MOA",
+              "Pilotage de la decision MOA, du stock publie et du referentiel EDEP.",
+              tagList(
+                card("A valider", queue_n, paste("Backlog MOA entrant,", oldest_pending_days, "jour(s) max d'attente")),
+                card("En cours", in_progress_n, "Dossiers actuellement ouverts par la MOA"),
+                card("En attente", waiting_n, "Dossiers temporises en attente de reprise"),
+                card("Rejetes", rejected_n, "Dossiers rejetes par la MOA"),
+                card("Validees", validated_n, "Publications deja actees"),
+                card("Modifications", modification_n, "Dossiers ouverts qui remplacent une famille stock"),
+                card("Parents impactes", impacted_parent_n, "Parents distincts concernes par la file ouverte"),
+                card("Liens a publier", open_links_n, "Volume d'enfants portes par la file ouverte"),
+                card("Stock familles", nrow(stock), "Familles actuellement publiees"),
+                card("Parents EDEP", distinct_parents, "Parents distincts dans le referentiel maison"),
+                card("Liens EDEP", nrow(edep_links_df), paste(distinct_children, "enfants distincts relies"))
+              )
+            )
+          )
         )
       )
     )
   })
   
-  make_validation_table <- function(df) {
+  make_validation_table <- function(df, mode = c("queue", "progress", "waiting", "rejected", "validated")) {
+    mode <- match.arg(mode)
+
+    displayed <- df %>%
+      transmute(
+        `ID proposition` = id_proposition,
+        Operation = type_operation,
+        `IDEP edition` = idep_agent_edition,
+        `IDEP supervision` = idep_agent_supervision,
+        `IDEP validation` = idep_agent_validation,
+        `Code parent` = code_ogr_parent,
+        Parent = libelle_parent,
+        `Nb enfants` = nb_enfants,
+        `Decision supervision` = decision_supervision,
+        `Decision validation` = decision_validation,
+        `Horodatage edition` = horodatage_edition,
+        `Horodatage supervision` = horodatage_decision_supervision,
+        `Horodatage validation` = horodatage_decision_validation
+      )
+
+    hidden_targets <- switch(
+      mode,
+      queue = c(4, 9, 12),
+      progress = c(9, 12),
+      waiting = c(9, 12),
+      rejected = integer(0),
+      validated = integer(0)
+    )
+    column_defs <- if (length(hidden_targets) == 0) {
+      list()
+    } else {
+      list(list(visible = FALSE, targets = hidden_targets))
+    }
+
     datatable(
-      df %>%
-        select(
-          id_proposition,
-          type_operation,
-          idep_agent_edition,
-          idep_agent_supervision,
-          idep_agent_validation,
-          code_ogr_parent,
-          libelle_parent,
-          nb_enfants,
-          decision_supervision,
-          decision_validation,
-          horodatage_edition,
-          horodatage_decision_supervision,
-          horodatage_decision_validation
-        ),
+      displayed,
+      extensions = "Buttons",
       selection = "single",
       rownames = FALSE,
-      options = list(pageLength = 8, scrollX = TRUE)
+      options = list(
+        pageLength = 8,
+        scrollX = TRUE,
+        dom = "Bfrtip",
+        buttons = list(
+          list(extend = "colvis", text = "Choisir les colonnes")
+        ),
+        columnDefs = column_defs
+      )
     ) %>%
       formatStyle(
-        "type_operation",
+        "Operation",
         backgroundColor = styleEqual(c("creation", "modification"), c("#eef7ff", "#fff1d6")),
         color = styleEqual(c("creation", "modification"), c("#1f5f8b", "#a75f00")),
         fontWeight = styleEqual(c("creation", "modification"), c("700", "700"))
       ) %>%
       formatStyle(
-        "decision_validation",
+        "Decision supervision",
+        backgroundColor = styleEqual(c("valide_en_etat", "modifie_et_valide", "rejete"), c("#e9f7ef", "#eef7ff", "#fff1d6")),
+        color = styleEqual(c("valide_en_etat", "modifie_et_valide", "rejete"), c("#1e8449", "#1f5f8b", "#b45f06")),
+        fontWeight = styleEqual(c("valide_en_etat", "modifie_et_valide", "rejete"), c("700", "700", "700"))
+      ) %>%
+      formatStyle(
+        "Decision validation",
         backgroundColor = styleEqual(c("validee", "rejetee"), c("#e9f7ef", "#ffe9ef")),
         color = styleEqual(c("validee", "rejetee"), c("#1e8449", "#a23b5a")),
         fontWeight = styleEqual(c("validee", "rejetee"), c("700", "700"))
@@ -261,23 +311,23 @@ validation_server <- function(input, output, session) {
   }
   
   output$table_validation_queue <- renderDT({
-    make_validation_table(validation_queue())
+    make_validation_table(validation_queue(), mode = "queue")
   })
   
   output$table_validation_in_progress <- renderDT({
-    make_validation_table(validation_in_progress())
+    make_validation_table(validation_in_progress(), mode = "progress")
   })
   
   output$table_validation_waiting <- renderDT({
-    make_validation_table(validation_waiting())
+    make_validation_table(validation_waiting(), mode = "waiting")
   })
   
   output$table_validation_rejected <- renderDT({
-    make_validation_table(validation_rejected())
+    make_validation_table(validation_rejected(), mode = "rejected")
   })
   
   output$table_validation_validated <- renderDT({
-    make_validation_table(validation_validated())
+    make_validation_table(validation_validated(), mode = "validated")
   })
   
   output$table_validation_stock <- renderDT({
@@ -294,10 +344,18 @@ validation_server <- function(input, output, session) {
           nb_enfants,
           codes_ogr_enfants
         ),
+      extensions = "Buttons",
       selection = "none",
       rownames = FALSE,
       filter = "top",
-      options = list(pageLength = 10, scrollX = TRUE)
+      options = list(
+        pageLength = 10,
+        scrollX = TRUE,
+        dom = "Bfrtip",
+        buttons = list(
+          list(extend = "colvis", text = "Choisir les colonnes")
+        )
+      )
     )
   })
   
@@ -318,10 +376,18 @@ validation_server <- function(input, output, session) {
           libelle_grand_domaine,
           libelle_domaine_professionnel
         ),
+      extensions = "Buttons",
       selection = "none",
       rownames = FALSE,
       filter = "top",
-      options = list(pageLength = 10, scrollX = TRUE)
+      options = list(
+        pageLength = 10,
+        scrollX = TRUE,
+        dom = "Bfrtip",
+        buttons = list(
+          list(extend = "colvis", text = "Choisir les colonnes")
+        )
+      )
     )
   })
   

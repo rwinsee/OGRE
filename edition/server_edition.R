@@ -456,6 +456,20 @@ edition_server <- function(input, output, session) {
         fontWeight = styleEqual(c("OUI", "NON"), c("700", "500"))
       )
   })
+
+  output$stock_families_notice <- renderUI({
+    if (nrow(families_data()) > 0) {
+      return(NULL)
+    }
+
+    tags$div(
+      class = "app-card",
+      tags$p(
+        tags$strong("Aucune famille publiee pour le moment. "),
+        "Le stock sera alimente apres publication d'une proposition en validation MOA."
+      )
+    )
+  })
   
   output$table_proposals <- renderDT({
     datatable(
@@ -559,6 +573,10 @@ edition_server <- function(input, output, session) {
   
   output$family_detail <- renderUI({
     family <- selected_family()
+    
+    if (nrow(families_data()) == 0) {
+      return(tags$p("Aucune famille n'est encore publiee dans le stock."))
+    }
     
     if (is.null(family)) {
       return(tags$p("Selectionnez une famille dans l'onglet des familles enregistrees."))

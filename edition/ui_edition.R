@@ -1,20 +1,30 @@
 edition_ui <- function() {
-  info_note <- function(...) {
-    div(
-      class = "info-note",
-      span(class = "info-dot", "i"),
-      div(...)
-    )
-  }
-
   helper_details <- function(summary_text, ...) {
     tags$details(
       class = "helper-details",
       tags$summary(
-        span(class = "info-dot", "i"),
+        span(class = "info-dot info-dot-inline", "i"),
         span(summary_text)
       ),
       div(class = "helper-details-body", ...)
+    )
+  }
+
+  inline_info <- function(text) {
+    tags$span(
+      class = "inline-info",
+      tabindex = "0",
+      `data-tooltip` = text,
+      `aria-label` = text,
+      "i"
+    )
+  }
+
+  label_with_info <- function(label, info_text) {
+    tags$span(
+      class = "label-with-info",
+      span(label),
+      inline_info(info_text)
     )
   }
 
@@ -98,22 +108,6 @@ edition_ui <- function() {
         line-height: 1.5;
         color: #5a6c83;
       }
-      .info-note {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-        background: #f6f9fd;
-        border: 1px solid #dce6f2;
-        border-radius: 14px;
-        padding: 10px 12px;
-        margin: -4px 0 12px;
-      }
-      .info-note p {
-        margin: 0;
-        font-size: 13px;
-        line-height: 1.5;
-        color: #51657f;
-      }
       .info-dot {
         width: 20px;
         height: 20px;
@@ -127,6 +121,82 @@ edition_ui <- function() {
         font-weight: 700;
         flex: 0 0 auto;
         margin-top: 1px;
+      }
+      .info-dot-inline {
+        margin-top: 0;
+      }
+      .label-with-info {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .inline-info {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        background: #17324d;
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: help;
+      }
+      .inline-info::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        left: 50%;
+        top: calc(100% + 10px);
+        transform: translateX(-50%);
+        min-width: 220px;
+        max-width: 280px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #17324d;
+        color: #ffffff;
+        font-size: 12px;
+        line-height: 1.45;
+        text-transform: none;
+        letter-spacing: normal;
+        white-space: normal;
+        box-shadow: 0 14px 26px rgba(23, 43, 77, 0.18);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.12s ease, transform 0.12s ease;
+        z-index: 20;
+      }
+      .inline-info::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: calc(100% + 4px);
+        transform: translateX(-50%);
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-bottom: 6px solid #17324d;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.12s ease;
+        z-index: 21;
+      }
+      .inline-info:hover::after,
+      .inline-info:hover::before,
+      .inline-info:focus::after,
+      .inline-info:focus::before {
+        opacity: 1;
+        visibility: visible;
+      }
+      .inline-info:hover::after,
+      .inline-info:focus::after {
+        transform: translateX(-50%) translateY(0);
+      }
+      .inline-info:focus {
+        outline: 2px solid #8cb6dd;
+        outline-offset: 2px;
       }
       .helper-details {
         border: 1px solid #dce5f1;
@@ -175,15 +245,56 @@ edition_ui <- function() {
       }
       .tab-intro {
         margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        flex-wrap: wrap;
+        color: #5f7793;
+        font-size: 12px;
       }
-      .tab-intro .info-note {
-        margin-bottom: 0;
+      .tab-intro-copy {
+        line-height: 1.5;
       }
       .preview-table {
         margin-top: 10px;
       }
       .preview-table th {
         background: #f4f7fc;
+      }
+      .subpanel-tabs > .nav {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        border-bottom: none;
+        margin: 4px 0 14px;
+      }
+      .subpanel-tabs > .nav > li {
+        float: none;
+        margin: 0;
+      }
+      .subpanel-tabs > .nav > li > a {
+        border: 1px solid #d6e1ef;
+        border-radius: 999px;
+        background: #f7f9fc;
+        color: #35506b;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 8px 14px;
+      }
+      .subpanel-tabs > .nav > li > a:hover {
+        background: #eef3f9;
+        border-color: #c4d4e8;
+      }
+      .subpanel-tabs > .nav > li.active > a,
+      .subpanel-tabs > .nav > li.active > a:hover,
+      .subpanel-tabs > .nav > li.active > a:focus {
+        background: #17324d;
+        border-color: #17324d;
+        color: #ffffff;
+      }
+      .subpanel-content {
+        min-height: 180px;
       }
       .reco-box {
         background: linear-gradient(160deg, #f8fbff 0%, #eef4fb 100%);
@@ -426,30 +537,34 @@ edition_ui <- function() {
           p("La verification ne sauvegarde rien. Elle permet juste de controler la composition de la famille avant envoi."),
           p("Si un doute persiste, comparez avec le stock existant ou une proposition deja creee dans les onglets de droite.")
         ),
-        textInput("idep_agent", "1. IDEP agent", value = "DFEC5Z"),
-        info_note(
-          p("Cet identifiant sert a tracer qui cree ou modifie la proposition dans le workflow.")
+        textInput(
+          "idep_agent",
+          label_with_info(
+            "1. IDEP agent",
+            "Cet identifiant sert a tracer qui cree ou modifie la proposition dans le workflow."
+          ),
+          value = "DFEC5Z"
         ),
         selectizeInput(
           "parent_code",
-          "2. Parent",
+          label_with_info(
+            "2. Parent",
+            "Choisissez la ligne la plus representative de la famille. Elle sert de point d'ancrage pour la lecture metier."
+          ),
           choices = character(0),
           selected = NULL,
           options = list(placeholder = "Choisir le parent")
         ),
-        info_note(
-          p("Choisissez la ligne qui represente le mieux la famille. Elle servira de point d'ancrage pour la lecture metier.")
-        ),
         selectizeInput(
           "child_codes",
-          "3. Enfants",
+          label_with_info(
+            "3. Enfants",
+            "Ajoutez ici les autres lignes rattachees au parent. Si le groupe parait trop heterogene, mieux vaut scinder la famille."
+          ),
           choices = character(0),
           selected = NULL,
           multiple = TRUE,
           options = list(placeholder = "Choisir les enfants")
-        ),
-        info_note(
-          p("Ajoutez ici les autres lignes rattachees au parent. Evitez de melanger des lignes qui n'auraient qu'un lien trop faible.")
         ),
         helper_details(
           "Comment choisir le parent et les enfants ?",
@@ -470,32 +585,47 @@ edition_ui <- function() {
         class = "app-card",
         div(
           class = "card-head",
-          h4("Resume de la proposition"),
-          span(class = "card-badge", "Controle")
+          h4("Analyse de la proposition"),
+          span(class = "card-badge", "Controle + aide")
         ),
         p(
           class = "card-copy",
-          "Ce bloc confirme ce qui sera envoye. S'il y a un doute ici, revenez sur le parent ou la liste des enfants."
+          "Basculez entre le resume et les preconisations sans descendre plus bas dans la page."
         ),
-        uiOutput("family_preview")
-      ),
-      div(
-        class = "app-card",
         div(
-          class = "card-head",
-          h4("Preconisations"),
-          span(class = "card-badge", "Aide a la decision")
-        ),
-        p(
-          class = "card-copy",
-          "Les preconisations n'imposent rien. Elles servent a reperer rapidement les regroupements a confirmer ou a retravailler."
-        ),
-        helper_details(
-          "Que lire en priorite ?",
-          p("Commencez par les ecarts forts entre parent et enfants, puis utilisez les cartes detaillees pour comprendre si l'ecart est acceptable."),
-          p("Si une recommandation vous semble logique metierement, vous pouvez conserver la famille : le but est d'eclairer la decision, pas de la bloquer.")
-        ),
-        uiOutput("recommendation_panel")
+          class = "subpanel-tabs",
+          tabsetPanel(
+            id = "edition_analysis_panel",
+            type = "tabs",
+            tabPanel(
+              "Resume",
+              div(
+                class = "subpanel-content",
+                p(
+                  class = "card-copy",
+                  "Ce bloc confirme ce qui sera envoye. S'il y a un doute ici, revenez sur le parent ou la liste des enfants."
+                ),
+                uiOutput("family_preview")
+              )
+            ),
+            tabPanel(
+              "Preconisations",
+              div(
+                class = "subpanel-content",
+                p(
+                  class = "card-copy",
+                  "Les preconisations n'imposent rien. Elles servent a reperer rapidement les regroupements a confirmer ou a retravailler."
+                ),
+                helper_details(
+                  "Que lire en priorite ?",
+                  p("Commencez par les ecarts forts entre parent et enfants, puis utilisez les cartes detaillees pour comprendre si l'ecart est acceptable."),
+                  p("Si une recommandation vous semble logique metierement, vous pouvez conserver la famille : le but est d'eclairer la decision, pas de la bloquer.")
+                ),
+                uiOutput("recommendation_panel")
+              )
+            )
+          )
+        )
       )
     ),
     column(
@@ -505,9 +635,8 @@ edition_ui <- function() {
           "Selection",
           div(
             class = "tab-intro",
-            info_note(
-              p("Selectionnez dans le referentiel les lignes a regrouper. Cette selection alimente ensuite les listes Parent et Enfants.")
-            ),
+            span(class = "tab-intro-copy", "Selectionnez dans le referentiel les lignes a regrouper."),
+            inline_info("Cette selection alimente ensuite les listes Parent et Enfants dans la zone de composition."),
             helper_details(
               "Bon reflexe de depart",
               p("Commencez par un filtre simple sur un mot metier, un code ou une famille proche."),
@@ -520,10 +649,10 @@ edition_ui <- function() {
           "Stock existant",
           div(
             class = "tab-intro",
-            info_note(
-              p("Consultez le stock pour verifier si une famille proche existe deja avant d'en creer une nouvelle.")
-            )
+            span(class = "tab-intro-copy", "Consultez le stock avant de creer une nouvelle famille."),
+            inline_info("Cet onglet sert surtout a verifier qu'une famille proche n'existe pas deja.")
           ),
+          uiOutput("stock_families_notice"),
           div(
             class = "action-row",
             actionButton("delete_family", "Supprimer la famille selectionnee", class = "btn-danger")
@@ -535,9 +664,8 @@ edition_ui <- function() {
           "Propositions",
           div(
             class = "tab-intro",
-            info_note(
-              p("Retrouvez ici les propositions deja creees, leur contenu detaille et les suppressions eventuelles avant traitement.")
-            )
+            span(class = "tab-intro-copy", "Retrouvez ici les propositions deja creees."),
+            inline_info("Vous pouvez y relire le detail d'une proposition avant traitement ou supprimer une proposition si besoin.")
           ),
           div(
             class = "action-row",
@@ -552,9 +680,8 @@ edition_ui <- function() {
           "Detail stock",
           div(
             class = "tab-intro",
-            info_note(
-              p("Ce detail permet de comparer votre idee de famille avec une famille deja publiee dans le stock.")
-            )
+            span(class = "tab-intro-copy", "Comparez votre idee avec une famille deja publiee."),
+            inline_info("Pratique pour verifier si votre nouvelle famille apporte vraiment quelque chose par rapport a l'existant.")
           ),
           uiOutput("family_detail")
         )
