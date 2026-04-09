@@ -1,15 +1,69 @@
+# ------------------------------------------------------------
+# R / RStudio
+# ------------------------------------------------------------
 .Rhistory
+.Rapp.history
+.RData
+.RDataTmp
+.Ruserdata
 .Rproj.user/
-.codex_repo_mirror/
-.codex_upload_chunks/
-ogre_source_bundle.zip
 
+# ------------------------------------------------------------
+# Local environment / secrets
+# ------------------------------------------------------------
+.Renviron
+.Renviron.site
+.Rprofile.local
+.Rprofile.user
+.env
+.env.*
+!.env.example
+
+# ------------------------------------------------------------
+# IDE / editor / OS noise
+# ------------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# ------------------------------------------------------------
+# Generated archives / exports / scratch files
+# ------------------------------------------------------------
+ogre_source_bundle.zip
+LOGIGRAMME_WORKFLOW_EDITION_VALIDATION.html
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# ------------------------------------------------------------
+# Optional deployment / dependency local state
+# ------------------------------------------------------------
+rsconnect/
+renv/library/
+renv/local/
+renv/python/
+renv/staging/
+
+# ------------------------------------------------------------
+# Application runtime data generated locally
+# ------------------------------------------------------------
 data/familles/
 data/propositions/
 data/workflow/
+
+# ------------------------------------------------------------
+# Generated referential outputs
+# ------------------------------------------------------------
 data/referentiel/referentiel_familles_edep.csv
 data/referentiel/referentiel_rome_edep.csv
 data/referentiel/liens_familles_edep.csv
 
+# ------------------------------------------------------------
+# Versioned reference sources kept in the repository
+# ------------------------------------------------------------
 !data/referentiel/ref_ogr.csv
 !data/referentiel/cr_gd_dp_v4_utf8.csv
