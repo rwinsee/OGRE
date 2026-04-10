@@ -841,6 +841,9 @@ edition_server <- function(input, output, session) {
     
     refresh_token(refresh_token() + 1)
     
+    ref_table_proxy <- DT::dataTableProxy("table_ref", session = session)
+    DT::selectRows(ref_table_proxy, NULL)
+    
     updateSelectizeInput(
       session = session,
       inputId = "parent_code",
