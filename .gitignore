@@ -1,69 +1,142 @@
 # ------------------------------------------------------------
-# R / RStudio
+# Fichiers temporaires et metadonnees R / RStudio
 # ------------------------------------------------------------
+
+# Historique des commandes executees dans la console R locale.
 .Rhistory
+
+# Historique specifique a certaines applications R interactives.
 .Rapp.history
+
+# Espace de travail R sauvegarde automatiquement en local.
 .RData
+
+# Fichier temporaire genere lors de la sauvegarde de l'espace R.
 .RDataTmp
+
+# Etat utilisateur local pour certaines sessions R.
 .Ruserdata
+
+# Metadonnees de projet RStudio propres au poste local.
 .Rproj.user/
 
 # ------------------------------------------------------------
-# Local environment / secrets
+# Environnement local et fichiers sensibles
 # ------------------------------------------------------------
+
+# Variables d'environnement locales propres a la machine.
 .Renviron
+
+# Variante site-wide locale a ne pas versionner ici.
 .Renviron.site
+
+# Profil R local specifique au projet.
 .Rprofile.local
+
+# Profil R utilisateur local.
 .Rprofile.user
+
+# Fichier d'environnement courant contenant souvent des secrets.
 .env
+
+# Variantes d'environnement locales comme .env.dev, .env.prod, etc.
 .env.*
+
+# Exemple volontairement versionne pour documenter les variables attendues.
 !.env.example
 
 # ------------------------------------------------------------
-# IDE / editor / OS noise
+# Bruit d'IDE, d'editeur et du systeme d'exploitation
 # ------------------------------------------------------------
+
+# Configuration locale de Visual Studio Code.
 .vscode/
+
+# Configuration locale des IDE JetBrains.
 .idea/
+
+# Fichier macOS parasite genere par le Finder.
 .DS_Store
+
+# Fichier Windows parasite pour les miniatures.
 Thumbs.db
+
+# Fichier Windows parasite pour les dossiers.
 desktop.ini
 
+# ------------------------------------------------------------
+# Archives, exports et fichiers de travail generes
+# ------------------------------------------------------------
 
-# ------------------------------------------------------------
-# Generated archives / exports / scratch files
-# ------------------------------------------------------------
+# Archive locale de source produite a la main ou par script.
 ogre_source_bundle.zip
+
+# Export HTML genere a partir du logigramme Markdown.
 LOGIGRAMME_WORKFLOW_EDITION_VALIDATION.html
+
+# Fichiers temporaires generiques.
 *.tmp
+
+# Sauvegardes automatiques ou manuelles.
 *.bak
+
+# Fichiers originaux laisses par certains outils de merge ou patch.
 *.orig
+
+# Rebuts de patch quand une application echoue.
 *.rej
 
 # ------------------------------------------------------------
-# Optional deployment / dependency local state
+# Etat local optionnel de deploiement ou de dependances
 # ------------------------------------------------------------
+
+# Etat local de publication ShinyApps / rsconnect.
 rsconnect/
+
+# Bibliotheque renv installee localement sur le poste.
 renv/library/
+
+# Variantes locales de renv non destinees au depot.
 renv/local/
+
+# Environnement Python local eventuellement pilote par renv.
 renv/python/
+
+# Zone tampon de renv pendant certaines operations.
 renv/staging/
 
 # ------------------------------------------------------------
-# Application runtime data generated locally
+# Donnees d'execution generees localement par l'application
 # ------------------------------------------------------------
+
+# Stock local des familles publiees genere pendant l'usage de l'app.
 data/familles/
+
+# Ancien dossier local de propositions, conserve hors Git.
 data/propositions/
+
+# Etat courant du workflow Edition / Supervision / Validation.
 data/workflow/
 
 # ------------------------------------------------------------
-# Generated referential outputs
+# Sorties referentielles regenerees par l'application
 # ------------------------------------------------------------
+
+# Referentiel familles EDEP regenere a partir du stock.
 data/referentiel/referentiel_familles_edep.csv
+
+# Referentiel ROME EDEP regenere localement.
 data/referentiel/referentiel_rome_edep.csv
+
+# Liens familles / EDEP recalcules localement.
 data/referentiel/liens_familles_edep.csv
 
 # ------------------------------------------------------------
-# Versioned reference sources kept in the repository
+# Sources de reference conservees dans le depot
 # ------------------------------------------------------------
+
+# Source de reference OGR a garder versionnee.
 !data/referentiel/ref_ogr.csv
+
+# Source d'enrichissement ROME a garder versionnee.
 !data/referentiel/cr_gd_dp_v4_utf8.csv

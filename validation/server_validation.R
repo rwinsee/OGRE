@@ -71,6 +71,12 @@ validation_server <- function(input, output, session) {
     load_families()
   })
   
+  workflow_active_proposals <- reactive({
+    refresh_token()
+    load_active_workflow_proposals() %>%
+      arrange(desc(horodatage_edition), id_proposition)
+  })
+  
   edep_reference <- reactive({
     refresh_token()
     load_edep_reference()
@@ -109,6 +115,16 @@ validation_server <- function(input, output, session) {
     
     df[idx, , drop = FALSE]
   })
+  
+  show_family_conflict_modal <- function(title, checks, closing_copy) {
+    showModal(modalDialog(
+      title = title,
+      build_family_conflict_modal_content(checks),
+      tags$p(closing_copy),
+      easyClose = TRUE,
+      footer = modalButton("Fermer")
+    ))
+  }
   
   validation_modification_compare <- reactive({
     proposal <- selected_validation()
@@ -753,6 +769,22 @@ validation_server <- function(input, output, session) {
     
     if (!nzchar(trimws(input$validation_agent))) {
       showNotification("Renseigne l'IDEP validation.", type = "warning")
+      return()
+    }
+    
+    workflow_checks <- build_family_conflict_checks(
+      draft = proposal_row_to_draft(proposal),
+      stock_families = stock_families(),
+      workflow_proposals = workflow_active_proposals(),
+      current_proposal = proposal
+    )
+    
+    if (has_blocking_family_conflicts(workflow_checks)) {
+      show_family_conflict_modal(
+        title = "Doublon ou chevauchement detecte",
+        checks = workflow_checks,
+        closing_copy = "Corrigez la proposition avant publication dans le stock."
+      )
       return()
     }
     

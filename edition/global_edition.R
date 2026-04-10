@@ -292,6 +292,11 @@ proposal_states_for_scope <- function(scope = "edition") {
   )
 }
 
+active_workflow_proposal_states <- function() {
+  proposal_states_for_scope("edition") %>%
+    filter(statut != "rejetes")
+}
+
 edep_links_template <- function() {
   data.frame(
     id_famille = character(),
@@ -1091,6 +1096,10 @@ load_proposals <- function(phase = "edition", states = NULL) {
     arrange(desc(horodatage_edition), id_proposition)
 }
 
+load_active_workflow_proposals <- function() {
+  load_proposals(states = active_workflow_proposal_states())
+}
+
 create_family <- function(idep_agent, code_ogr_parent, code_rome_parent, libelle_parent, codes_ogr_enfants, libelles_enfants, id_proposition_source = "", idep_agent_validation = "", date_validation = "") {
   created_at <- now_chr()
   file_stem <- build_family_file_stem(
@@ -1347,6 +1356,19 @@ save_supervision_decision <- function(proposal_row, idep_agent_supervision, comm
     proposal_row$delta_enfants_retires_supervision[1] <- if (decision == "valide_en_etat") "" else proposal_row$delta_enfants_retires_supervision[1]
   }
   
+  if (decision != "rejete") {
+    workflow_checks <- build_family_conflict_checks(
+      draft = proposal_row_to_draft(proposal_row),
+      stock_families = load_families(),
+      workflow_proposals = load_active_workflow_proposals(),
+      current_proposal = proposal_row
+    )
+    assert_no_blocking_family_conflicts(
+      workflow_checks,
+      prefix = "Envoi supervision vers validation refuse"
+    )
+  }
+  
   target_phase <- if (decision == "rejete") "supervision" else "validation"
   target_statut <- if (decision == "rejete") "rejetes" else "a_valider"
   
@@ -1465,6 +1487,17 @@ publish_validation_to_stock <- function(proposal_row, idep_agent_validation, com
   proposal_row$libelles_enfants_validation[1] <- proposal_row$libelles_enfants[1]
   proposal_row$nb_enfants_validation[1] <- proposal_row$nb_enfants[1]
   
+  workflow_checks <- build_family_conflict_checks(
+    draft = proposal_row_to_draft(proposal_row),
+    stock_families = load_families(),
+    workflow_proposals = load_active_workflow_proposals(),
+    current_proposal = proposal_row
+  )
+  assert_no_blocking_family_conflicts(
+    workflow_checks,
+    prefix = "Publication validation refusee"
+  )
+  
   if (nzchar(proposal_row$base_famille_id[1])) {
     delete_family_by_id(proposal_row$base_famille_id[1])
   }
@@ -1578,6 +1611,189 @@ find_child_conflicts <- function(draft, families) {
   
   bind_rows(conflict_rows) %>%
     distinct(child_code, child_label, family_id, family_parent, .keep_all = TRUE)
+}
+
+proposal_row_to_draft <- function(proposal_row) {
+  if (is.null(proposal_row) || nrow(proposal_row) == 0) {
+    return(NULL)
+  }
+  
+  list(
+    idep_agent = first_non_empty(proposal_row$idep_agent_edition[1], ""),
+    code_ogr_parent = as.character(proposal_row$code_ogr_parent[1]),
+    code_rome_parent = as.character(proposal_row$code_rome_parent[1]),
+    libelle_parent = as.character(proposal_row$libelle_parent[1]),
+    child_codes = split_pipe_values(proposal_row$codes_ogr_enfants[1]),
+    child_labels = split_pipe_values(proposal_row$libelles_enfants[1])
+  )
+}
+
+build_family_conflict_checks <- function(draft, stock_families, workflow_proposals = proposals_template(), current_proposal = NULL) {
+  empty_conflicts <- data.frame(
+    child_code = character(),
+    child_label = character(),
+    family_id = character(),
+    family_parent = character(),
+    stringsAsFactors = FALSE
+  )
+  
+  empty_checks <- list(
+    duplicate_stock = NULL,
+    duplicate_workflow = NULL,
+    child_conflicts = empty_conflicts,
+    current_proposal_id = "",
+    base_family_id = ""
+  )
+  
+  if (is.null(draft) || !nzchar(first_non_empty(draft$code_ogr_parent, ""))) {
+    return(empty_checks)
+  }
+  
+  stock_families <- if (is.null(stock_families)) {
+    families_template()
+  } else {
+    normalize_families(stock_families)
+  }
+  
+  workflow_proposals <- if (is.null(workflow_proposals)) {
+    proposals_template()
+  } else {
+    normalize_proposals(workflow_proposals)
+  }
+  
+  current_proposal_id <- if (is.null(current_proposal) || nrow(current_proposal) == 0) {
+    ""
+  } else {
+    first_non_empty(current_proposal$id_proposition[1], "")
+  }
+  
+  base_family_id <- if (is.null(current_proposal) || nrow(current_proposal) == 0) {
+    base_family <- find_base_family_for_draft(draft, stock_families)
+    if (is.null(base_family)) "" else base_family$id_famille[1]
+  } else {
+    first_non_empty(current_proposal$base_famille_id[1], "")
+  }
+  
+  if (nzchar(current_proposal_id)) {
+    workflow_proposals <- workflow_proposals %>%
+      filter(id_proposition != current_proposal_id)
+  }
+  
+  workflow_families <- project_proposals_as_families(workflow_proposals)
+  child_conflict_families <- bind_rows(stock_families, workflow_families) %>%
+    normalize_families()
+  
+  exclude_ids <- unique(c(current_proposal_id, base_family_id))
+  exclude_ids <- exclude_ids[nzchar(exclude_ids)]
+  
+  if (length(exclude_ids) > 0) {
+    child_conflict_families <- child_conflict_families %>%
+      filter(!(id_famille %in% exclude_ids))
+  }
+  
+  list(
+    duplicate_stock = find_duplicate_family(draft, stock_families),
+    duplicate_workflow = find_duplicate_family(draft, workflow_families),
+    child_conflicts = find_child_conflicts(draft, child_conflict_families),
+    current_proposal_id = current_proposal_id,
+    base_family_id = base_family_id
+  )
+}
+
+has_blocking_family_conflicts <- function(checks) {
+  if (is.null(checks)) {
+    return(FALSE)
+  }
+  
+  !is.null(checks$duplicate_stock) ||
+    !is.null(checks$duplicate_workflow) ||
+    nrow(checks$child_conflicts) > 0
+}
+
+build_family_conflict_modal_content <- function(checks, max_rows = 10L) {
+  if (is.null(checks)) {
+    return(tags$p("Aucun conflit detecte."))
+  }
+  
+  tagList(
+    if (!is.null(checks$duplicate_stock)) {
+      tagList(
+        tags$p("Cette combinaison parent / enfants existe deja dans le stock."),
+        tags$p(tags$strong("Famille stock : "), checks$duplicate_stock$id_famille[1]),
+        tags$p(tags$strong("Parent : "), checks$duplicate_stock$libelle_parent[1])
+      )
+    },
+    if (!is.null(checks$duplicate_workflow)) {
+      tagList(
+        tags$p("Cette combinaison parent / enfants existe deja dans une autre proposition en cours de workflow."),
+        tags$p(tags$strong("Proposition : "), checks$duplicate_workflow$id_famille[1]),
+        tags$p(tags$strong("Parent : "), checks$duplicate_workflow$libelle_parent[1])
+      )
+    },
+    if (nrow(checks$child_conflicts) > 0) {
+      tagList(
+        tags$p("Certaines appellations sont deja rattachees a une autre famille ou a une autre proposition active."),
+        tags$table(
+          class = "table table-striped table-bordered",
+          tags$thead(
+            tags$tr(
+              tags$th("Code OGR"),
+              tags$th("Libelle enfant"),
+              tags$th("Famille existante"),
+              tags$th("Parent existant")
+            )
+          ),
+          tags$tbody(
+            lapply(seq_len(min(nrow(checks$child_conflicts), max_rows)), function(i) {
+              tags$tr(
+                tags$td(checks$child_conflicts$child_code[i]),
+                tags$td(checks$child_conflicts$child_label[i]),
+                tags$td(checks$child_conflicts$family_id[i]),
+                tags$td(checks$child_conflicts$family_parent[i])
+              )
+            })
+          )
+        ),
+        if (nrow(checks$child_conflicts) > max_rows) {
+          tags$p(paste("...", nrow(checks$child_conflicts) - max_rows, "autres conflits non affiches."))
+        }
+      )
+    }
+  )
+}
+
+build_family_conflict_error_message <- function(checks, prefix = "Operation bloquee") {
+  if (is.null(checks)) {
+    return(prefix)
+  }
+  
+  details <- character(0)
+  
+  if (!is.null(checks$duplicate_stock)) {
+    details <- c(details, paste("doublon stock", checks$duplicate_stock$id_famille[1]))
+  }
+  
+  if (!is.null(checks$duplicate_workflow)) {
+    details <- c(details, paste("doublon workflow", checks$duplicate_workflow$id_famille[1]))
+  }
+  
+  if (nrow(checks$child_conflicts) > 0) {
+    details <- c(details, paste(nrow(checks$child_conflicts), "appellation(s) deja rattachee(s)"))
+  }
+  
+  if (length(details) == 0) {
+    return(prefix)
+  }
+  
+  paste0(prefix, " : ", paste(details, collapse = " ; "))
+}
+
+assert_no_blocking_family_conflicts <- function(checks, prefix = "Operation bloquee") {
+  if (has_blocking_family_conflicts(checks)) {
+    stop(build_family_conflict_error_message(checks, prefix = prefix), call. = FALSE)
+  }
+  
+  invisible(TRUE)
 }
 
 enrich_family_diagnostics <- function(families) {

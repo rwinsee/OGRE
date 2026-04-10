@@ -42,6 +42,12 @@ supervision_server <- function(input, output, session) {
     load_families()
   })
   
+  workflow_active_proposals <- reactive({
+    refresh_token()
+    load_active_workflow_proposals() %>%
+      arrange(desc(horodatage_edition), id_proposition)
+  })
+  
   selected_supervision <- reactive({
     active_tab <- input$supervision_status_tab
     
@@ -62,6 +68,16 @@ supervision_server <- function(input, output, session) {
     
     df[idx, , drop = FALSE]
   })
+  
+  show_family_conflict_modal <- function(title, checks, closing_copy) {
+    showModal(modalDialog(
+      title = title,
+      build_family_conflict_modal_content(checks),
+      tags$p(closing_copy),
+      easyClose = TRUE,
+      footer = modalButton("Fermer")
+    ))
+  }
   
   supervision_modification_compare <- reactive({
     proposal <- selected_supervision()
@@ -495,6 +511,22 @@ supervision_server <- function(input, output, session) {
       return()
     }
     
+    workflow_checks <- build_family_conflict_checks(
+      draft = proposal_row_to_draft(proposal),
+      stock_families = stock_families(),
+      workflow_proposals = workflow_active_proposals(),
+      current_proposal = proposal
+    )
+    
+    if (has_blocking_family_conflicts(workflow_checks)) {
+      show_family_conflict_modal(
+        title = "Doublon ou chevauchement detecte",
+        checks = workflow_checks,
+        closing_copy = "Corrigez la proposition avant de l'envoyer en validation MOA."
+      )
+      return()
+    }
+    
     save_supervision_decision(
       proposal_row = proposal,
       idep_agent_supervision = input$supervision_agent,
@@ -524,6 +556,22 @@ supervision_server <- function(input, output, session) {
     
     if (is.null(draft) || !nzchar(draft$code_ogr_parent) || length(draft$child_codes) == 0) {
       showNotification("Definis un parent et au moins un enfant pour la version supervision.", type = "warning")
+      return()
+    }
+    
+    workflow_checks <- build_family_conflict_checks(
+      draft = draft,
+      stock_families = stock_families(),
+      workflow_proposals = workflow_active_proposals(),
+      current_proposal = proposal
+    )
+    
+    if (has_blocking_family_conflicts(workflow_checks)) {
+      show_family_conflict_modal(
+        title = "Doublon ou chevauchement detecte",
+        checks = workflow_checks,
+        closing_copy = "Corrigez la version supervision avant de l'envoyer en validation MOA."
+      )
       return()
     }
     

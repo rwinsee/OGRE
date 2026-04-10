@@ -4,7 +4,6 @@ edition_server <- function(input, output, session) {
   }
   
   refresh_token <- session$userData$workflow_refresh
-  pending_conflict_draft <- reactiveVal(NULL)
   
   selected_reference <- reactive({
     idx <- input$table_ref_rows_selected
@@ -281,19 +280,14 @@ edition_server <- function(input, output, session) {
       arrange(desc(horodatage_edition), id_proposition)
   })
   
-  families_view <- reactive({
-    enrich_family_diagnostics(families_data())
+  workflow_active_proposals <- reactive({
+    refresh_token()
+    load_active_workflow_proposals() %>%
+      arrange(desc(horodatage_edition), id_proposition)
   })
   
-  comparable_existing_filiations <- reactive({
-    active_proposals <- proposals_data() %>%
-      filter(statut_proposition != "rejetes")
-    
-    bind_rows(
-      families_data(),
-      project_proposals_as_families(active_proposals)
-    ) %>%
-      normalize_families()
+  families_view <- reactive({
+    enrich_family_diagnostics(families_data())
   })
   
   selected_family <- reactive({
@@ -867,8 +861,11 @@ edition_server <- function(input, output, session) {
   observeEvent(input$create_proposal, {
     draft <- draft_family()
     stock_families <- families_data()
-    existing_proposals <- proposals_data() %>%
-      filter(statut_proposition != "rejetes")
+    workflow_checks <- build_family_conflict_checks(
+      draft = draft,
+      stock_families = stock_families,
+      workflow_proposals = workflow_active_proposals()
+    )
     
     if (!nzchar(trimws(input$idep_agent))) {
       showNotification("Renseignez l'IDEP agent.", type = "warning")
@@ -885,81 +882,17 @@ edition_server <- function(input, output, session) {
       return()
     }
     
-    duplicate_stock <- find_duplicate_family(draft, stock_families)
-    if (!is.null(duplicate_stock)) {
+    if (has_blocking_family_conflicts(workflow_checks)) {
       showModal(modalDialog(
-        title = "Famille deja existante",
-        p("Cette combinaison parent / enfants existe deja dans le stock."),
-        p(paste("Famille stock :", duplicate_stock$id_famille[1])),
-        p(paste("Parent :", duplicate_stock$libelle_parent[1])),
+        title = "Doublon ou chevauchement detecte",
+        build_family_conflict_modal_content(workflow_checks),
+        p("Corrigez la composition avant de creer une nouvelle proposition."),
         easyClose = TRUE,
         footer = modalButton("Fermer")
       ))
       return()
     }
     
-    duplicate_proposal <- find_duplicate_family(draft, project_proposals_as_families(existing_proposals))
-    if (!is.null(duplicate_proposal)) {
-      showModal(modalDialog(
-        title = "Proposition deja existante",
-        p("Cette combinaison parent / enfants existe deja dans le workflow."),
-        p(paste("Proposition :", duplicate_proposal$id_famille[1])),
-        p(paste("Parent :", duplicate_proposal$libelle_parent[1])),
-        easyClose = TRUE,
-        footer = modalButton("Fermer")
-      ))
-      return()
-    }
-    
-    child_conflicts <- find_child_conflicts(draft, comparable_existing_filiations())
-    if (nrow(child_conflicts) > 0) {
-      pending_conflict_draft(draft)
-      
-      showModal(modalDialog(
-        title = "Enfants deja affilies",
-        p("Certains enfants sont deja rattaches a une autre famille ou deja presents dans une proposition."),
-        tags$table(
-          class = "table table-striped table-bordered",
-          tags$thead(
-            tags$tr(
-              tags$th("Code OGR"),
-              tags$th("Libelle enfant"),
-              tags$th("Famille existante"),
-              tags$th("Parent existant")
-            )
-          ),
-          tags$tbody(
-            lapply(seq_len(min(nrow(child_conflicts), 10)), function(i) {
-              tags$tr(
-                tags$td(child_conflicts$child_code[i]),
-                tags$td(child_conflicts$child_label[i]),
-                tags$td(child_conflicts$family_id[i]),
-                tags$td(child_conflicts$family_parent[i])
-              )
-            })
-          )
-        ),
-        p("Vous pouvez annuler ou enregistrer quand meme."),
-        easyClose = TRUE,
-        footer = tagList(
-          modalButton("Annuler"),
-          actionButton("confirm_conflict_save", "Enregistrer quand meme", class = "btn-warning")
-        )
-      ))
-      return()
-    }
-    
-    save_draft_proposal(draft)
-  })
-  
-  observeEvent(input$confirm_conflict_save, {
-    draft <- pending_conflict_draft()
-    if (is.null(draft)) {
-      return()
-    }
-    
-    removeModal()
-    pending_conflict_draft(NULL)
     save_draft_proposal(draft)
   })
   
